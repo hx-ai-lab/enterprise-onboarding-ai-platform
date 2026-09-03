@@ -4,5 +4,5 @@ import { navItems } from "@/lib/nav-items";
 const item = navItems.find((i) => i.href === "/planner")!;
 
 export default function PlannerPage() {
-  return <ComingSoonPage title={item.label} icon={item.icon} />;
+  return <ComingSoonPage item={item} />;
 }

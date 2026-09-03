@@ -1,21 +1,39 @@
-import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type BadgeStatus = "live" | "wip";
+
 type BadgeProps = {
-  icon?: LucideIcon;
+  status?: BadgeStatus;
   children: React.ReactNode;
   className?: string;
 };
 
-export function Badge({ icon: Icon, children, className }: BadgeProps) {
+const STATUS_STYLES: Record<BadgeStatus, { chip: string; dot: string }> = {
+  live: {
+    chip: "border-status-live-border bg-status-live-bg text-status-live-text",
+    dot: "bg-status-live-dot",
+  },
+  wip: {
+    chip: "border-status-wip-border bg-status-wip-bg text-status-wip-text",
+    dot: "bg-accent",
+  },
+};
+
+export function Badge({ status = "wip", children, className }: BadgeProps) {
+  const styles = STATUS_STYLES[status];
+
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-muted-foreground",
+        "inline-flex h-6 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium tracking-wide",
+        styles.chip,
         className,
       )}
     >
-      {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : null}
+      <span
+        className={cn("h-1.5 w-1.5 shrink-0 rounded-full", styles.dot)}
+        aria-hidden
+      />
       {children}
     </span>
   );
