@@ -47,7 +47,7 @@ npm run dev
 | `LLM_API_KEY` | 大模型服务的 API Key(通用命名,配合 `LLM_BASE_URL` 可指向任意 OpenAI 兼容接口)。与 `OPENAI_API_KEY` 二选一,`LLM_API_KEY` 优先级更高 |
 | `OPENAI_API_KEY` | 直接使用 OpenAI 官方 API 时可用这个更常见的变量名代替 `LLM_API_KEY`;设置后若未显式配置 `LLM_BASE_URL`,会自动使用 `https://api.openai.com/v1` 作为请求地址,无需额外配置 |
 | `LLM_BASE_URL` | OpenAI 兼容的 Chat Completions 接口 Base URL(例如接入非 OpenAI 的兼容服务),请求会 POST 到 `${LLM_BASE_URL}/chat/completions`;仅在需要覆盖默认的 OpenAI 地址时才需要设置 |
-| `LLM_MODEL` | 默认模型名称,单个 Skill 也可以在编辑页覆盖为自己的模型 |
+| `LLM_MODEL` | 部署级模型名称,设置后对所有 Skill 生效(优先级高于每个 Skill 自己保存的 `model_params.model`),用于整体切换到非 OpenAI 的模型(如接入 DeepSeek 时设为 `deepseek-v4-flash` 等);不设置时才会使用各 Skill 编辑页里保存的模型 |
 | `PORT` | 本地启动端口(可选) |
 
 `.env.local` 用于存放本地真实配置,已被 `.gitignore` 忽略,请勿提交真实密钥;`.env.example` 仅列出变量名。
