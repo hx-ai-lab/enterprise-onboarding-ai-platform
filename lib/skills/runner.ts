@@ -35,10 +35,6 @@ const MOCK_RUNNERS: Record<string, MockRunner> = {
   "skill-compliance-review": (input: ComplianceReviewInput) => mockComplianceReview(input),
 };
 
-export function isKnownSkillId(skillId: string): boolean {
-  return skillId in MOCK_RUNNERS;
-}
-
 /** Generic fallback for user-created Skills that have no dedicated pipeline logic yet. */
 function genericMockRunner(input: Record<string, unknown>) {
   return {

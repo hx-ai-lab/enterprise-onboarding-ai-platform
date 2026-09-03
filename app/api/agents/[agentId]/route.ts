@@ -41,15 +41,16 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     if (!Array.isArray(body.bound_skill_ids)) return jsonError(400, "bound_skill_ids 必须为数组");
     const skills = await getSkills();
     const skillIds = new Set(skills.map((s) => s.id));
-    const unknown = body.bound_skill_ids.find((id) => !skillIds.has(id));
-    if (unknown) return jsonError(400, `未知的 Skill:${unknown}`);
+    // Silently drop references to Skills deleted since this Agent was last
+    // loaded, rather than rejecting the whole save — the UI has no way to
+    // un-check a binding for a Skill that no longer exists to render.
+    body.bound_skill_ids = body.bound_skill_ids.filter((id) => skillIds.has(id));
   }
   if (body.bound_tool_ids !== undefined) {
     if (!Array.isArray(body.bound_tool_ids)) return jsonError(400, "bound_tool_ids 必须为数组");
     const tools = await getTools();
     const toolIds = new Set(tools.map((t) => t.id));
-    const unknown = body.bound_tool_ids.find((id) => !toolIds.has(id));
-    if (unknown) return jsonError(400, `未知的 Tool:${unknown}`);
+    body.bound_tool_ids = body.bound_tool_ids.filter((id) => toolIds.has(id));
   }
 
   const agent = await updateAgent(agentId, body);

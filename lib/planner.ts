@@ -27,12 +27,15 @@ type Needs = {
   training: boolean;
 };
 
+// Keep the "contact" keyword set here in sync with CATEGORY_KEYWORDS.contact
+// in lib/skills/mocks.ts — this decides whether the contacts Tool is planned
+// at all, while that one decides which role it's queried for.
 function detectNeeds(question: string): Needs {
   const needs: Needs = {
     task: /任务|要做|清单|待办|下一步|todo/i.test(question),
     process: /流程|步骤|怎么|如何|顺序|第一天|入职当天/.test(question),
     policy: /制度|规定|政策|请假|报销|考勤|社保|公积金|试用期|薪酬|工资|保密|手册/.test(question),
-    contact: /联系人|找谁|电话|邮箱|负责人|HR|IT|行政/i.test(question),
+    contact: /联系人|联系方式|找谁|电话|邮箱|负责人|HR|IT|行政|财务/i.test(question),
     training: /培训|课程|学习|考试/.test(question),
   };
 
