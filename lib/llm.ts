@@ -23,11 +23,17 @@ const OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1";
 // as an alias so a plain OpenAI key works with zero extra config — when set
 // without an explicit LLM_BASE_URL, requests go straight to OpenAI's API.
 function resolveApiKey(): string | undefined {
-  return process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
+  // Trim defensively: env vars pasted into a dashboard UI easily pick up a
+  // trailing newline/space, which silently turns into an "invalid API key"
+  // error from the provider that looks like a wrong key rather than whitespace.
+  const raw = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 function resolveBaseUrl(): string | undefined {
-  return process.env.LLM_BASE_URL || (resolveApiKey() ? OPENAI_DEFAULT_BASE_URL : undefined);
+  const raw = process.env.LLM_BASE_URL?.trim();
+  return raw || (resolveApiKey() ? OPENAI_DEFAULT_BASE_URL : undefined);
 }
 
 export function isLLMConfigured(): boolean {
@@ -45,7 +51,7 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
   }
 
   const baseUrl = baseUrlRaw.replace(/\/+$/, "");
-  const model = params.model || process.env.LLM_MODEL || "gpt-4o-mini";
+  const model = params.model || process.env.LLM_MODEL?.trim() || "gpt-4o-mini";
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
