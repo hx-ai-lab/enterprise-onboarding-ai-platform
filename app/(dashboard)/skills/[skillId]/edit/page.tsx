@@ -7,6 +7,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Skill } from "@/lib/types";
 
 type FormState = {
@@ -30,10 +31,7 @@ export default function EditSkillPage() {
 
   const load = useCallback(() => {
     fetch(`/api/skills/${params.skillId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Skill" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ skill: Skill }>(r))
       .then((data) => {
         const s: Skill = data.skill;
         setLoadError(null);
@@ -47,7 +45,7 @@ export default function EditSkillPage() {
           enabled: s.enabled,
         });
       })
-      .catch((e) => setLoadError(e.message));
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.skillId]);
 
   useEffect(() => {
@@ -76,8 +74,7 @@ export default function EditSkillPage() {
           enabled: form.enabled,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "保存失败");
+      await parseJsonResponse(res);
       setSaved(true);
       router.push(`/skills/${params.skillId}`);
     } catch (e) {

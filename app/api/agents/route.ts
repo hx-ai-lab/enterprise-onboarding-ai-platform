@@ -24,18 +24,14 @@ export async function POST(req: Request) {
   const [skills, tools] = await Promise.all([getSkills(), getTools()]);
   const skillIds = new Set(skills.map((s) => s.id));
   const toolIds = new Set(tools.map((t) => t.id));
-  const unknownSkill = bound_skill_ids.find((id) => !skillIds.has(id));
-  if (unknownSkill) return jsonError(400, `未知的 Skill:${unknownSkill}`);
-  const unknownTool = bound_tool_ids.find((id) => !toolIds.has(id));
-  if (unknownTool) return jsonError(400, `未知的 Tool:${unknownTool}`);
 
   const agent = await createAgent({
     name,
     description,
     system_prompt,
     model_id,
-    bound_skill_ids,
-    bound_tool_ids,
+    bound_skill_ids: bound_skill_ids.filter((id) => skillIds.has(id)),
+    bound_tool_ids: bound_tool_ids.filter((id) => toolIds.has(id)),
     enabled,
   });
   return NextResponse.json({ agent }, { status: 201 });

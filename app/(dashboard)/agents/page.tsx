@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/page-states";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Agent } from "@/lib/types";
 
 export default function AgentsPage() {
@@ -16,15 +17,12 @@ export default function AgentsPage() {
 
   const load = useCallback(() => {
     fetch("/api/agents")
-      .then((r) => {
-        if (!r.ok) throw new Error(`加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ agents: Agent[] }>(r))
       .then((data) => {
         setError(null);
         setAgents(data.agents ?? []);
       })
-      .catch(() => setError("Agent 列表加载失败,请重试"));
+      .catch((e) => setError(e instanceof Error ? e.message : "Agent 列表加载失败,请重试"));
   }, []);
 
   useEffect(() => {
@@ -39,10 +37,10 @@ export default function AgentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !agent.enabled }),
       });
-      if (!res.ok) throw new Error();
+      await parseJsonResponse(res);
       load();
-    } catch {
-      setError("更新启用状态失败,请重试");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "更新启用状态失败,请重试");
     } finally {
       setTogglingId(null);
     }

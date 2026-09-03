@@ -230,7 +230,3 @@ export async function runTool(
   }
   return handler(input, ctx);
 }
-
-export function isKnownToolId(toolId: string): boolean {
-  return toolId in TOOL_HANDLERS;
-}

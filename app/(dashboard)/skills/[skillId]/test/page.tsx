@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { JsonBlock } from "@/components/ui/json-block";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import { useCurrentEmployee } from "@/lib/hooks/use-current-employee";
 import type { Skill } from "@/lib/types";
 
@@ -68,15 +69,12 @@ export default function SkillTestPage() {
 
   const load = useCallback(() => {
     fetch(`/api/skills/${skillId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Skill" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ skill: Skill }>(r))
       .then((data) => {
         setLoadError(null);
         setSkill(data.skill);
       })
-      .catch((e) => setLoadError(e.message));
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [skillId]);
 
   useEffect(() => {
@@ -103,8 +101,7 @@ export default function SkillTestPage() {
           employee_id: employee.id,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "测试执行失败");
+      const data = await parseJsonResponse<TestResult>(res);
       setResult(data);
       load();
     } catch (e) {

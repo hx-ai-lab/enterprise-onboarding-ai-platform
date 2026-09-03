@@ -15,6 +15,7 @@ import {
   StepList,
 } from "@/components/agent-run/run-trace";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { AgentRunLog } from "@/lib/types";
 
 const STATUS_LABEL: Record<AgentRunLog["status"], string> = {
@@ -30,15 +31,12 @@ export default function AgentLogsPage() {
 
   const load = useCallback(() => {
     fetch(`/api/agents/${params.agentId}/logs`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Agent" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ logs: AgentRunLog[] }>(r))
       .then((data) => {
         setError(null);
         setLogs(data.logs ?? []);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.agentId]);
 
   useEffect(() => {

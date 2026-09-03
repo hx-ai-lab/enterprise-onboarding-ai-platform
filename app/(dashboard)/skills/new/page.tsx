@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 
 export default function NewSkillPage() {
   const router = useRouter();
@@ -34,8 +35,7 @@ export default function NewSkillPage() {
           enabled: true,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "创建失败");
+      const data = await parseJsonResponse<{ skill: { id: string } }>(res);
       router.push(`/skills/${data.skill.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");

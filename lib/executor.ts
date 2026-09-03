@@ -7,11 +7,12 @@ import { getSkills } from "@/lib/data/skills";
 import { getTools } from "@/lib/data/tools";
 import { CapabilityDisabledError, CapabilityNotFoundError } from "@/lib/errors";
 import { generatePlan } from "@/lib/planner";
-import type {
-  ComplianceReviewOutput,
-  PolicyQaOutput,
-  ProcessExplainOutput,
-  TaskDecisionOutput,
+import {
+  CONTACT_ROLE_BY_KEYWORD,
+  type ComplianceReviewOutput,
+  type PolicyQaOutput,
+  type ProcessExplainOutput,
+  type TaskDecisionOutput,
 } from "@/lib/skills/mocks";
 import { runSkill } from "@/lib/skills/runner";
 import { runTool } from "@/lib/tools/runners";
@@ -205,7 +206,18 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         break;
       }
       case "tool-query-contacts": {
-        const input: Record<string, unknown> = { department: employee.department };
+        // Resolve which role the question is actually asking about (IT/HR/
+        // finance/...) instead of blindly scoping to the asker's own
+        // department — "IT 支持的联系方式" from a Marketing employee must
+        // still return the IT contact, not her own department head.
+        const matchedRole = (structured?.keywords ?? [])
+          .map((k) => CONTACT_ROLE_BY_KEYWORD[k])
+          .find(Boolean);
+        const input: Record<string, unknown> = matchedRole
+          ? matchedRole === "部门负责人"
+            ? { role: matchedRole, department: employee.department }
+            : { role: matchedRole }
+          : { department: employee.department };
         const output = await execToolStep(step, input);
         contactsResult = output as ContactsToolResult | null;
         break;

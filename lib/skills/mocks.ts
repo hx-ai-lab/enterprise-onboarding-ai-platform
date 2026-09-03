@@ -32,10 +32,26 @@ export type StructuringOutput = {
 
 const CATEGORY_KEYWORDS: Record<Exclude<QuestionType, "other">, string[]> = {
   policy: ["制度", "规定", "政策", "请假", "报销", "考勤", "社保", "公积金", "试用期", "薪酬", "工资", "保密", "手册"],
-  contact: ["联系人", "找谁", "电话", "邮箱", "负责人", "HR", "IT", "行政"],
+  contact: ["联系人", "联系方式", "找谁", "电话", "邮箱", "负责人", "HR", "IT", "行政", "财务"],
   training: ["培训", "课程", "学习", "考试"],
   task: ["任务", "要做", "清单", "待办", "下一步", "todo"],
   process: ["流程", "步骤", "怎么", "如何", "顺序", "第一天", "入职当天"],
+};
+
+/**
+ * Maps a matched "contact" keyword to the Contact.role value it identifies,
+ * so the executor can query tool-query-contacts by role instead of blindly
+ * scoping to the asking employee's own department. Shared here (rather than
+ * duplicated in the executor) so the structuring keywords and the role
+ * lookup never drift apart.
+ */
+export const CONTACT_ROLE_BY_KEYWORD: Record<string, string> = {
+  HR: "HR",
+  IT: "IT",
+  行政: "行政",
+  培训: "培训",
+  财务: "财务",
+  负责人: "部门负责人",
 };
 
 const CATEGORY_PRIORITY: Exclude<QuestionType, "other">[] = [
