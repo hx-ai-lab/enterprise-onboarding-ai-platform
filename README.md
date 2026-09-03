@@ -44,8 +44,9 @@ npm run dev
 
 | 变量 | 说明 |
 |---|---|
-| `LLM_API_KEY` | 大模型服务的 API Key。留空则始终使用 Mock 模式 |
-| `LLM_BASE_URL` | OpenAI 兼容的 Chat Completions 接口 Base URL(例如 `https://api.openai.com/v1`),请求会 POST 到 `${LLM_BASE_URL}/chat/completions` |
+| `LLM_API_KEY` | 大模型服务的 API Key(通用命名,配合 `LLM_BASE_URL` 可指向任意 OpenAI 兼容接口)。与 `OPENAI_API_KEY` 二选一,`LLM_API_KEY` 优先级更高 |
+| `OPENAI_API_KEY` | 直接使用 OpenAI 官方 API 时可用这个更常见的变量名代替 `LLM_API_KEY`;设置后若未显式配置 `LLM_BASE_URL`,会自动使用 `https://api.openai.com/v1` 作为请求地址,无需额外配置 |
+| `LLM_BASE_URL` | OpenAI 兼容的 Chat Completions 接口 Base URL(例如接入非 OpenAI 的兼容服务),请求会 POST 到 `${LLM_BASE_URL}/chat/completions`;仅在需要覆盖默认的 OpenAI 地址时才需要设置 |
 | `LLM_MODEL` | 默认模型名称,单个 Skill 也可以在编辑页覆盖为自己的模型 |
 | `PORT` | 本地启动端口(可选) |
 
@@ -53,7 +54,7 @@ npm run dev
 
 ### Mock 模式说明
 
-- `LLM_API_KEY` / `LLM_BASE_URL` 任一未配置时,所有 Skill 调用自动走内置的规则化 Mock 输出(见 `lib/skills/mocks.ts`),Tool 调用本身就是纯代码 + 本地 JSON 数据,不依赖大模型
+- `LLM_API_KEY`/`OPENAI_API_KEY` 均未配置时,所有 Skill 调用自动走内置的规则化 Mock 输出(见 `lib/skills/mocks.ts`),Tool 调用本身就是纯代码 + 本地 JSON 数据,不依赖大模型
 - 真实调用失败(网络错误、超时、非 2xx 状态码、返回内容无法解析为 JSON)时同样会静默降级为 Mock 输出,并在执行明细中用文字提示「已使用 Mock 模式」及具体原因,不会导致请求失败
 - Agent 运行页 / Skill 测试页的每一步都会标注 `mocked` 状态,方便区分本次输出来自真实模型还是 Mock
 
