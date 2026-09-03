@@ -16,22 +16,42 @@ export type LLMCallResult =
   | { ok: false; reason: string };
 
 const TIMEOUT_MS = 15_000;
+const OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1";
+
+// LLM_API_KEY is the primary, provider-agnostic name (works with any
+// OpenAI-compatible endpoint via LLM_BASE_URL); OPENAI_API_KEY is accepted
+// as an alias so a plain OpenAI key works with zero extra config — when set
+// without an explicit LLM_BASE_URL, requests go straight to OpenAI's API.
+function resolveApiKey(): string | undefined {
+  // Trim defensively: env vars pasted into a dashboard UI easily pick up a
+  // trailing newline/space, which silently turns into an "invalid API key"
+  // error from the provider that looks like a wrong key rather than whitespace.
+  const raw = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY;
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function resolveBaseUrl(): string | undefined {
+  const raw = process.env.LLM_BASE_URL?.trim();
+  return raw || (resolveApiKey() ? OPENAI_DEFAULT_BASE_URL : undefined);
+}
 
 export function isLLMConfigured(): boolean {
-  return Boolean(process.env.LLM_API_KEY && process.env.LLM_BASE_URL);
+  return Boolean(resolveApiKey() && resolveBaseUrl());
 }
 
 export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
-  if (!isLLMConfigured()) {
+  const apiKey = resolveApiKey();
+  const baseUrlRaw = resolveBaseUrl();
+  if (!apiKey || !baseUrlRaw) {
     return {
       ok: false,
-      reason: "LLM 未配置(缺少 LLM_API_KEY / LLM_BASE_URL),已使用 Mock 模式",
+      reason: "LLM 未配置(缺少 LLM_API_KEY / OPENAI_API_KEY),已使用 Mock 模式",
     };
   }
 
-  const baseUrl = process.env.LLM_BASE_URL!.replace(/\/+$/, "");
-  const apiKey = process.env.LLM_API_KEY!;
-  const model = params.model || process.env.LLM_MODEL || "gpt-4o-mini";
+  const baseUrl = baseUrlRaw.replace(/\/+$/, "");
+  const model = params.model || process.env.LLM_MODEL?.trim() || "gpt-4o-mini";
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
