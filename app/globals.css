@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f6f4;
+  --foreground: #2b2825;
+
+  --sidebar-background: #f2efea;
+  --sidebar-border: #e0dad2;
+
+  --header-background: #fbfaf8;
+  --header-border: #e4dfd8;
+
+  --card: #fdfcfa;
+  --card-border: #e4dfd8;
+
+  --muted: #f5f1eb;
+  --muted-foreground: #6d655c;
+  --subtle-foreground: #8d857c;
+
+  --accent: #a85c2f;
+  --accent-hover: #7f4520;
+  --accent-foreground: #fbf8f5;
+  --accent-subtle: #efe4da;
+  --accent-subtle-border: #e0cdba;
+
+  --border: #e4dfd8;
+
+  --status-live-bg: #f0f4ed;
+  --status-live-border: #cfdac8;
+  --status-live-text: #4a6141;
+  --status-live-dot: #6d8a5c;
+
+  --status-wip-bg: #f8efe7;
+  --status-wip-border: #e6d5c5;
+  --status-wip-text: #8f4a20;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-header-background: var(--header-background);
+  --color-header-border: var(--header-border);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-subtle-border: var(--accent-subtle-border);
+  --color-border: var(--border);
+  --color-status-live-bg: var(--status-live-bg);
+  --color-status-live-border: var(--status-live-border);
+  --color-status-live-text: var(--status-live-text);
+  --color-status-live-dot: var(--status-live-dot);
+  --color-status-wip-bg: var(--status-wip-bg);
+  --color-status-wip-border: var(--status-wip-border);
+  --color-status-wip-text: var(--status-wip-text);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
