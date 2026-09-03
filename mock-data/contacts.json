@@ -1,0 +1,112 @@
+[
+  {
+    "id": "contact-001",
+    "name": "孙婉如",
+    "role": "HR",
+    "title": "人力资源负责人",
+    "department": "人力资源部",
+    "scope": "全公司",
+    "email": "sun.wanru@onboardops-demo.com",
+    "phone": "139-8000-2001",
+    "office_hours": "工作日 09:30-18:30"
+  },
+  {
+    "id": "contact-002",
+    "name": "林晓峰",
+    "role": "部门负责人",
+    "title": "技术部总监",
+    "department": "技术部",
+    "scope": "技术部",
+    "email": "lin.xiaofeng@onboardops-demo.com",
+    "phone": "139-8000-2002",
+    "office_hours": "工作日 10:00-19:00"
+  },
+  {
+    "id": "contact-003",
+    "name": "赵明月",
+    "role": "部门负责人",
+    "title": "产品部总监",
+    "department": "产品部",
+    "scope": "产品部",
+    "email": "zhao.mingyue@onboardops-demo.com",
+    "phone": "139-8000-2003",
+    "office_hours": "工作日 10:00-19:00"
+  },
+  {
+    "id": "contact-004",
+    "name": "周子墨",
+    "role": "部门负责人",
+    "title": "市场与销售总监",
+    "department": "市场部",
+    "scope": "市场部 / 销售部",
+    "email": "zhou.zimo@onboardops-demo.com",
+    "phone": "139-8000-2004",
+    "office_hours": "工作日 09:30-18:30"
+  },
+  {
+    "id": "contact-005",
+    "name": "郑思源",
+    "role": "部门负责人",
+    "title": "财务与法务总监",
+    "department": "财务部",
+    "scope": "财务部 / 法务部",
+    "email": "zheng.siyuan@onboardops-demo.com",
+    "phone": "139-8000-2005",
+    "office_hours": "工作日 09:30-18:00"
+  },
+  {
+    "id": "contact-006",
+    "name": "冯雅静",
+    "role": "行政",
+    "title": "行政主管",
+    "department": "行政部",
+    "scope": "全公司 · 工位/门禁/办公用品",
+    "email": "feng.yajing@onboardops-demo.com",
+    "phone": "139-8000-2006",
+    "office_hours": "工作日 09:00-18:00"
+  },
+  {
+    "id": "contact-007",
+    "name": "马天佑",
+    "role": "IT",
+    "title": "IT支持工程师",
+    "department": "技术部",
+    "scope": "全公司 · 账号/设备/网络",
+    "email": "ma.tianyou@onboardops-demo.com",
+    "phone": "139-8000-2007",
+    "office_hours": "工作日 09:00-21:00(轮班)"
+  },
+  {
+    "id": "contact-008",
+    "name": "杨若晴",
+    "role": "培训",
+    "title": "培训发展专员",
+    "department": "人力资源部",
+    "scope": "全公司 · 新人培训/岗位培训",
+    "email": "yang.ruoqing@onboardops-demo.com",
+    "phone": "139-8000-2008",
+    "office_hours": "工作日 09:30-18:30"
+  },
+  {
+    "id": "contact-009",
+    "name": "韩雨泽",
+    "role": "财务",
+    "title": "财务共享专员",
+    "department": "财务部",
+    "scope": "全公司 · 报销/薪酬发放",
+    "email": "han.yuze@onboardops-demo.com",
+    "phone": "139-8000-2009",
+    "office_hours": "工作日 09:30-18:00"
+  },
+  {
+    "id": "contact-010",
+    "name": "刘一诺",
+    "role": "HR",
+    "title": "招聘与入职专员",
+    "department": "人力资源部",
+    "scope": "全公司 · 入职手续/合同",
+    "email": "liu.yinuo@onboardops-demo.com",
+    "phone": "139-0000-1005",
+    "office_hours": "工作日 09:30-18:30"
+  }
+]

@@ -22,7 +22,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
           {navItems
             .filter((item) => item.group === group)
             .map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
 
               return (
@@ -47,7 +47,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
                   />
                   <Icon className="size-4 shrink-0 opacity-95" aria-hidden />
                   <span className="flex-1 truncate">{item.label}</span>
-                  {isActive ? (
+                  {isActive && item.wip !== false ? (
                     <span className="shrink-0 rounded-sm border border-accent-subtle-border px-1 font-mono text-[9.5px] tracking-wide text-accent-hover">
                       WIP
                     </span>
