@@ -19,6 +19,8 @@ export type NavItem = {
   group: NavGroup;
   icon: LucideIcon;
   description: string;
+  /** false once the module has real functionality wired up (vs. the V1 placeholder page). */
+  wip?: boolean;
 };
 
 export const navGroups: NavGroup[] = ["调试", "构建", "观测"];
@@ -39,6 +41,7 @@ export const navItems: NavItem[] = [
     group: "调试",
     icon: Bot,
     description: "管理与监控 Agent 的运行状态",
+    wip: false,
   },
   {
     href: "/skills",
@@ -47,6 +50,7 @@ export const navItems: NavItem[] = [
     group: "构建",
     icon: Sparkles,
     description: "维护 Agent 可调用的技能库",
+    wip: false,
   },
   {
     href: "/tools",
@@ -55,6 +59,7 @@ export const navItems: NavItem[] = [
     group: "构建",
     icon: Wrench,
     description: "维护 Agent 可调用的工具库",
+    wip: false,
   },
   {
     href: "/planner",

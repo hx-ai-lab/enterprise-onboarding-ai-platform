@@ -1,0 +1,56 @@
+[
+  {
+    "id": "tool-query-employee",
+    "name": "查询员工信息 Tool",
+    "description": "查询员工的部门、岗位、入职阶段等档案信息。查询本人返回完整档案,查询他人仅返回脱敏后的公开组织信息(不含手机号/邮箱)。",
+    "enabled": true,
+    "data_source": "employees.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "tool-query-tasks",
+    "name": "查询入职任务 Tool",
+    "description": "按员工查询其入职任务列表,包含状态、优先级、截止日期、负责人角色与依赖关系。",
+    "enabled": true,
+    "data_source": "onboarding_tasks.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "tool-query-contacts",
+    "name": "查询公司联系人 Tool",
+    "description": "按角色(HR/IT/行政/培训/财务/部门负责人)或部门查询公司联系人信息。",
+    "enabled": true,
+    "data_source": "contacts.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "tool-query-policies",
+    "name": "查询制度知识库 Tool",
+    "description": "按关键词查询公司制度知识库,覆盖员工手册、考勤、请假、报销、信息安全、社保公积金、试用期等制度。",
+    "enabled": true,
+    "data_source": "policies.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "tool-query-trainings",
+    "name": "查询培训计划 Tool",
+    "description": "按部门/岗位查询适用的培训计划,覆盖通用培训、岗位培训、信息安全培训与企业文化培训。",
+    "enabled": true,
+    "data_source": "trainings.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "tool-task-status-calc",
+    "name": "入职任务状态计算 Tool",
+    "description": "基于员工的入职任务数据进行纯代码计算,输出任务完成率、逾期任务列表与按优先级排序的结果,不调用大模型。",
+    "enabled": true,
+    "data_source": "onboarding_tasks.json",
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  }
+]

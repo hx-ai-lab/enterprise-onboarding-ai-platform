@@ -1,0 +1,122 @@
+[
+  {
+    "id": "training-001",
+    "name": "新员工入职导览",
+    "category": "通用",
+    "target_department": "all",
+    "target_position": "all",
+    "format": "线下",
+    "duration_hours": 2,
+    "required": true,
+    "suggested_day_offset": 1,
+    "description": "介绍公司发展历程、组织架构、基础规章制度与办公系统使用方式。"
+  },
+  {
+    "id": "training-002",
+    "name": "企业文化与价值观宣讲",
+    "category": "企业文化",
+    "target_department": "all",
+    "target_position": "all",
+    "format": "线下",
+    "duration_hours": 1.5,
+    "required": true,
+    "suggested_day_offset": 3,
+    "description": "介绍公司使命愿景价值观,以及典型文化案例分享。"
+  },
+  {
+    "id": "training-003",
+    "name": "信息安全与保密意识培训",
+    "category": "信息安全",
+    "target_department": "all",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 1,
+    "required": true,
+    "suggested_day_offset": 3,
+    "description": "讲解账号密码安全、数据保密要求、常见安全风险与上报流程。"
+  },
+  {
+    "id": "training-004",
+    "name": "OA / IM 办公系统使用培训",
+    "category": "通用",
+    "target_department": "all",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 1,
+    "required": true,
+    "suggested_day_offset": 2,
+    "description": "讲解请假报销流程、内部沟通工具与常用办公系统操作。"
+  },
+  {
+    "id": "training-005",
+    "name": "前后端研发规范与代码协作培训",
+    "category": "岗位",
+    "target_department": "技术部",
+    "target_position": "all",
+    "format": "线下",
+    "duration_hours": 3,
+    "required": true,
+    "suggested_day_offset": 7,
+    "description": "讲解代码仓库规范、代码评审流程、CI/CD 及研发协作工具使用方式。"
+  },
+  {
+    "id": "training-006",
+    "name": "产品需求评审与协作流程培训",
+    "category": "岗位",
+    "target_department": "产品部",
+    "target_position": "all",
+    "format": "线下",
+    "duration_hours": 2,
+    "required": true,
+    "suggested_day_offset": 7,
+    "description": "讲解需求评审、原型工具、与研发/设计团队的协作机制。"
+  },
+  {
+    "id": "training-007",
+    "name": "市场与销售话术及CRM系统培训",
+    "category": "岗位",
+    "target_department": "市场部",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 2,
+    "required": true,
+    "suggested_day_offset": 7,
+    "description": "讲解市场推广规范、销售话术与 CRM 系统的基本使用。"
+  },
+  {
+    "id": "training-008",
+    "name": "财务报销与费用系统操作培训",
+    "category": "岗位",
+    "target_department": "财务部",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 1.5,
+    "required": true,
+    "suggested_day_offset": 7,
+    "description": "讲解财务共享系统操作、报销流程与常见问题处理。"
+  },
+  {
+    "id": "training-009",
+    "name": "人力资源系统与招聘协作培训",
+    "category": "岗位",
+    "target_department": "人力资源部",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 1.5,
+    "required": true,
+    "suggested_day_offset": 7,
+    "description": "讲解招聘系统、员工档案管理与常见 HR 流程操作。"
+  },
+  {
+    "id": "training-010",
+    "name": "行政与法务基础流程培训",
+    "category": "岗位",
+    "target_department": "行政部",
+    "target_position": "all",
+    "format": "线上",
+    "duration_hours": 1.5,
+    "required": false,
+    "suggested_day_offset": 10,
+    "description": "讲解行政事务处理流程、合同用印与常见法务协作事项。"
+  }
+]

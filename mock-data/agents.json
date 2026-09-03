@@ -1,0 +1,48 @@
+[
+  {
+    "id": "agent-onboarding-assistant",
+    "name": "入职助手 Agent",
+    "description": "面向新员工的通用入职问答与任务引导助手,覆盖任务推荐、流程讲解、制度问答、联系人与培训查询。",
+    "system_prompt": "你是 OnboardOps 企业入职助手,负责帮助新员工顺利完成入职流程。你必须先通过已启用的 Tool 查询事实性信息(员工身份、任务、制度、联系人、培训),不得凭空编造;所有面向员工的回复在发出前必须经过合规与风险审核 Skill;当查询不到数据时,须明确告知员工“当前系统未查询到相关信息”,不得编造。",
+    "model_id": "gpt-4o-mini",
+    "bound_skill_ids": [
+      "skill-question-structuring",
+      "skill-task-decision",
+      "skill-process-explain",
+      "skill-policy-qa",
+      "skill-reply-generation",
+      "skill-compliance-review"
+    ],
+    "bound_tool_ids": [
+      "tool-query-employee",
+      "tool-query-tasks",
+      "tool-query-contacts",
+      "tool-query-policies",
+      "tool-query-trainings",
+      "tool-task-status-calc"
+    ],
+    "enabled": true,
+    "created_at": "2026-08-15T02:00:00.000Z",
+    "updated_at": "2026-08-15T02:00:00.000Z"
+  },
+  {
+    "id": "agent-policy-qa-assistant",
+    "name": "制度问答助手 Agent",
+    "description": "轻量版助手,仅聚焦制度与知识问答场景,不涉及任务推荐与流程讲解,用于演示按需裁剪 Skill/Tool 绑定的效果。",
+    "system_prompt": "你是 OnboardOps 制度问答助手,只负责基于公司制度知识库回答员工的制度类问题,不涉及任务推荐。所有回复必须经过合规与风险审核 Skill,查不到制度时必须明确说明未查询到相关信息。",
+    "model_id": "gpt-4o-mini",
+    "bound_skill_ids": [
+      "skill-question-structuring",
+      "skill-policy-qa",
+      "skill-reply-generation",
+      "skill-compliance-review"
+    ],
+    "bound_tool_ids": [
+      "tool-query-employee",
+      "tool-query-policies"
+    ],
+    "enabled": true,
+    "created_at": "2026-08-20T02:00:00.000Z",
+    "updated_at": "2026-08-20T02:00:00.000Z"
+  }
+]

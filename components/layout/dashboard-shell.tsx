@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Menu, Search, User, X } from "lucide-react";
+import { Bell, Menu, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { EmployeeIdentitySwitcher } from "@/components/identity/employee-identity-switcher";
 import { navItems } from "@/lib/nav-items";
 
 function BrandMark() {
@@ -37,7 +38,9 @@ function SearchField() {
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const pathname = usePathname();
-  const activeItem = navItems.find((item) => item.href === pathname);
+  const activeItem = navItems.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
 
   return (
     <div className="flex h-dvh w-full overflow-hidden">
@@ -101,9 +104,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <div className="flex size-7 items-center justify-center rounded-md border border-sidebar-border bg-header-background text-muted-foreground hover:border-border">
               <Bell className="size-[15px]" aria-hidden />
             </div>
-            <div className="flex size-7 items-center justify-center rounded-full border border-border bg-muted">
-              <User className="size-4 text-muted-foreground" aria-hidden />
-            </div>
+            <EmployeeIdentitySwitcher />
           </div>
         </header>
 
