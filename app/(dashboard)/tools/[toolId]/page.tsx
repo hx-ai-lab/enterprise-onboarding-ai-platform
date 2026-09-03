@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Tool } from "@/lib/types";
 
 export default function ToolDetailPage() {
@@ -22,16 +23,13 @@ export default function ToolDetailPage() {
 
   const load = useCallback(() => {
     fetch(`/api/tools/${params.toolId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Tool" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ tool: Tool }>(r))
       .then((data) => {
         setError(null);
         setTool(data.tool);
         setForm({ name: data.tool.name, description: data.tool.description, data_source: data.tool.data_source });
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.toolId]);
 
   useEffect(() => {
@@ -48,10 +46,7 @@ export default function ToolDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? "保存失败");
-      }
+      await parseJsonResponse(res);
       setFeedback("已保存,Agent 控制台将立即读取最新配置。");
       load();
     } catch (e) {
@@ -63,12 +58,17 @@ export default function ToolDetailPage() {
 
   async function toggleEnabled() {
     if (!tool) return;
-    const res = await fetch(`/api/tools/${params.toolId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: !tool.enabled }),
-    });
-    if (res.ok) load();
+    try {
+      const res = await fetch(`/api/tools/${params.toolId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !tool.enabled }),
+      });
+      await parseJsonResponse(res);
+      load();
+    } catch (e) {
+      setFeedback(e instanceof Error ? e.message : "更新启用状态失败,请重试");
+    }
   }
 
   async function remove() {
@@ -76,10 +76,10 @@ export default function ToolDetailPage() {
     setDeleting(true);
     try {
       const res = await fetch(`/api/tools/${params.toolId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("删除失败");
+      await parseJsonResponse(res);
       router.push("/tools");
-    } catch {
-      setFeedback("删除失败,请重试");
+    } catch (e) {
+      setFeedback(e instanceof Error ? e.message : "删除失败,请重试");
       setDeleting(false);
     }
   }

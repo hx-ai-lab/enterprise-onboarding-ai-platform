@@ -15,6 +15,7 @@ import {
   StepList,
 } from "@/components/agent-run/run-trace";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import { useCurrentEmployee } from "@/lib/hooks/use-current-employee";
 import { ONBOARDING_STAGE_LABELS } from "@/lib/types";
 import type { Agent, ComplianceResult, ExecutionStep, PlanStep, RunStatus, Skill, Tool } from "@/lib/types";
@@ -51,15 +52,12 @@ export default function AgentRunPage() {
 
   const load = useCallback(() => {
     fetch(`/api/agents/${params.agentId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Agent" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<AgentDetail>(r))
       .then((data) => {
         setLoadError(null);
         setDetail(data);
       })
-      .catch((e) => setLoadError(e.message));
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.agentId]);
 
   useEffect(() => {
@@ -80,8 +78,7 @@ export default function AgentRunPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ employee_id: employee.id, question }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? `运行失败(状态码 ${res.status})`);
+      const data = await parseJsonResponse<RunResponse>(res);
       setResult(data);
     } catch (e) {
       setRunError(e instanceof Error ? e.message : "运行失败,请重试");

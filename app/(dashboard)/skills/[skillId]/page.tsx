@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { JsonBlock } from "@/components/ui/json-block";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Skill } from "@/lib/types";
 
 export default function SkillDetailPage() {
@@ -20,15 +21,12 @@ export default function SkillDetailPage() {
 
   const load = useCallback(() => {
     fetch(`/api/skills/${params.skillId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Skill" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      })
+      .then((r) => parseJsonResponse<{ skill: Skill }>(r))
       .then((data) => {
         setError(null);
         setSkill(data.skill);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.skillId]);
 
   useEffect(() => {
@@ -37,12 +35,17 @@ export default function SkillDetailPage() {
 
   async function toggleEnabled() {
     if (!skill) return;
-    const res = await fetch(`/api/skills/${params.skillId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: !skill.enabled }),
-    });
-    if (res.ok) load();
+    try {
+      const res = await fetch(`/api/skills/${params.skillId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !skill.enabled }),
+      });
+      await parseJsonResponse(res);
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "更新启用状态失败,请重试");
+    }
   }
 
   async function remove() {
@@ -50,9 +53,10 @@ export default function SkillDetailPage() {
     setDeleting(true);
     try {
       const res = await fetch(`/api/skills/${params.skillId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("删除失败");
+      await parseJsonResponse(res);
       router.push("/skills");
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "删除失败,请重试");
       setDeleting(false);
     }
   }

@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { CapabilityPicker } from "@/components/agents/capability-picker";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Agent, Skill, Tool } from "@/lib/types";
 
 type FormState = {
@@ -42,12 +43,9 @@ export default function AgentDetailPage() {
 
   const load = useCallback(() => {
     Promise.all([
-      fetch(`/api/agents/${params.agentId}`).then((r) => {
-        if (!r.ok) throw new Error(r.status === 404 ? "未找到该 Agent" : `加载失败(状态码 ${r.status})`);
-        return r.json();
-      }),
-      fetch("/api/skills").then((r) => r.json()),
-      fetch("/api/tools").then((r) => r.json()),
+      fetch(`/api/agents/${params.agentId}`).then((r) => parseJsonResponse<{ agent: Agent }>(r)),
+      fetch("/api/skills").then((r) => parseJsonResponse<{ skills: Skill[] }>(r)),
+      fetch("/api/tools").then((r) => parseJsonResponse<{ tools: Tool[] }>(r)),
     ])
       .then(([agentData, skillData, toolData]) => {
         const a: Agent = agentData.agent;
@@ -64,7 +62,7 @@ export default function AgentDetailPage() {
           bound_tool_ids: new Set(a.bound_tool_ids),
         });
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, [params.agentId]);
 
   useEffect(() => {
@@ -88,8 +86,7 @@ export default function AgentDetailPage() {
           bound_tool_ids: Array.from(form.bound_tool_ids),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "保存失败");
+      await parseJsonResponse(res);
       setSaved(true);
       load();
     } catch (e) {
@@ -101,12 +98,17 @@ export default function AgentDetailPage() {
 
   async function toggleEnabled() {
     if (!agent) return;
-    const res = await fetch(`/api/agents/${params.agentId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: !agent.enabled }),
-    });
-    if (res.ok) load();
+    try {
+      const res = await fetch(`/api/agents/${params.agentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !agent.enabled }),
+      });
+      await parseJsonResponse(res);
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "更新启用状态失败,请重试");
+    }
   }
 
   async function remove() {
@@ -114,9 +116,10 @@ export default function AgentDetailPage() {
     setDeleting(true);
     try {
       const res = await fetch(`/api/agents/${params.agentId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("删除失败");
+      await parseJsonResponse(res);
       router.push("/agents");
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "删除失败,请重试");
       setDeleting(false);
     }
   }

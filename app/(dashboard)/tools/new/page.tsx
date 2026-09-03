@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 
 export default function NewToolPage() {
   const router = useRouter();
@@ -25,8 +26,7 @@ export default function NewToolPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description, data_source: dataSource, enabled: true }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "创建失败");
+      const data = await parseJsonResponse<{ tool: { id: string } }>(res);
       router.push(`/tools/${data.tool.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");

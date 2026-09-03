@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { LoadingState } from "@/components/ui/page-states";
+import { ErrorState, LoadingState } from "@/components/ui/page-states";
 import { CapabilityPicker } from "@/components/agents/capability-picker";
 import { buttonClass } from "@/lib/ui-variants";
+import { parseJsonResponse } from "@/lib/fetch-json";
 import type { Skill, Tool } from "@/lib/types";
 
 export default function NewAgentPage() {
@@ -24,15 +25,24 @@ export default function NewAgentPage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([fetch("/api/skills").then((r) => r.json()), fetch("/api/tools").then((r) => r.json())]).then(
-      ([skillData, toolData]) => {
+  const loadOptions = useCallback(() => {
+    Promise.all([
+      fetch("/api/skills").then((r) => parseJsonResponse<{ skills: Skill[] }>(r)),
+      fetch("/api/tools").then((r) => parseJsonResponse<{ tools: Tool[] }>(r)),
+    ])
+      .then(([skillData, toolData]) => {
+        setLoadError(null);
         setSkills(skillData.skills ?? []);
         setTools(toolData.tools ?? []);
-      },
-    );
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "加载失败,请重试"));
   }, []);
+
+  useEffect(() => {
+    loadOptions();
+  }, [loadOptions]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,8 +62,7 @@ export default function NewAgentPage() {
           enabled: true,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "创建失败");
+      const data = await parseJsonResponse<{ agent: { id: string } }>(res);
       router.push(`/agents/${data.agent.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "创建失败");
@@ -74,9 +83,13 @@ export default function NewAgentPage() {
         }
       />
 
-      {!skills || !tools ? (
+      {loadError ? <ErrorState message={loadError} onRetry={loadOptions} /> : null}
+
+      {!loadError && (!skills || !tools) ? (
         <LoadingState label="加载可绑定的 Skill / Tool 列表…" />
-      ) : (
+      ) : null}
+
+      {!loadError && skills && tools ? (
         <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3 rounded-lg border border-card-border bg-card p-4">
           <label className="flex flex-col gap-1.5 text-xs">
             <span className="font-medium text-foreground">名称</span>
@@ -158,7 +171,7 @@ export default function NewAgentPage() {
             </button>
           </div>
         </form>
-      )}
+      ) : null}
     </div>
   );
 }
