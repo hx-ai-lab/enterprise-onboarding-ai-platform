@@ -51,7 +51,13 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
   }
 
   const baseUrl = baseUrlRaw.replace(/\/+$/, "");
-  const model = params.model || process.env.LLM_MODEL?.trim() || "gpt-4o-mini";
+  // A deployment-level LLM_MODEL wins over a Skill's stored model_params.model:
+  // every Skill (including all 6 built-ins) always has a concrete model value,
+  // so treating it as higher priority than the env var made LLM_MODEL
+  // effectively dead — switching providers via env vars alone (e.g. to a
+  // non-OpenAI endpoint with different model names) would silently keep
+  // sending the old model name from each Skill's stored config.
+  const model = process.env.LLM_MODEL?.trim() || params.model || "gpt-4o-mini";
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
