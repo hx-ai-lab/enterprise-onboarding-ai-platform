@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, updateCollection } from "@/lib/data/json-store";
+import { SeedOverrideRepository } from "@/lib/data/seed-override-repository";
 import type { Tool } from "@/lib/types";
 
-const FILE = "tools.json";
+const repository = new SeedOverrideRepository<Tool>("tools.json", "tools");
 
 export function getTools(): Promise<Tool[]> {
-  return readCollection<Tool>(FILE);
+  return repository.getAll();
 }
 
 export async function getToolById(id: string): Promise<Tool | null> {
@@ -37,8 +37,7 @@ export async function createTool(input: CreateToolInput): Promise<Tool> {
     created_at: now,
     updated_at: now,
   };
-  await updateCollection<Tool>(FILE, (tools) => [...tools, tool]);
-  return tool;
+  return repository.create(tool);
 }
 
 export type UpdateToolInput = Partial<
@@ -49,22 +48,9 @@ export async function updateTool(
   id: string,
   input: UpdateToolInput,
 ): Promise<Tool | null> {
-  let updated: Tool | null = null;
-  await updateCollection<Tool>(FILE, (tools) =>
-    tools.map((t) => {
-      if (t.id !== id) return t;
-      updated = { ...t, ...input, updated_at: new Date().toISOString() };
-      return updated;
-    }),
-  );
-  return updated;
+  return repository.update(id, input);
 }
 
 export async function deleteTool(id: string): Promise<boolean> {
-  let existed = false;
-  await updateCollection<Tool>(FILE, (tools) => {
-    existed = tools.some((t) => t.id === id);
-    return tools.filter((t) => t.id !== id);
-  });
-  return existed;
+  return repository.delete(id);
 }

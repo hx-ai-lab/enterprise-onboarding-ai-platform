@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, updateCollection } from "@/lib/data/json-store";
+import { SeedOverrideRepository } from "@/lib/data/seed-override-repository";
 import type { ModelParams, Skill, SkillTest } from "@/lib/types";
 
-const FILE = "skills.json";
+const repository = new SeedOverrideRepository<Skill>("skills.json", "skills");
 
 export function getSkills(): Promise<Skill[]> {
-  return readCollection<Skill>(FILE);
+  return repository.getAll();
 }
 
 export async function getSkillById(id: string): Promise<Skill | null> {
@@ -40,8 +40,7 @@ export async function createSkill(input: CreateSkillInput): Promise<Skill> {
     created_at: now,
     updated_at: now,
   };
-  await updateCollection<Skill>(FILE, (skills) => [...skills, skill]);
-  return skill;
+  return repository.create(skill);
 }
 
 export type UpdateSkillInput = Partial<
@@ -52,37 +51,16 @@ export async function updateSkill(
   id: string,
   input: UpdateSkillInput,
 ): Promise<Skill | null> {
-  let updated: Skill | null = null;
-  await updateCollection<Skill>(FILE, (skills) =>
-    skills.map((s) => {
-      if (s.id !== id) return s;
-      updated = { ...s, ...input, updated_at: new Date().toISOString() };
-      return updated;
-    }),
-  );
-  return updated;
+  return repository.update(id, input);
 }
 
 export async function setSkillLastTest(
   id: string,
   test: SkillTest,
 ): Promise<Skill | null> {
-  let updated: Skill | null = null;
-  await updateCollection<Skill>(FILE, (skills) =>
-    skills.map((s) => {
-      if (s.id !== id) return s;
-      updated = { ...s, last_test: test };
-      return updated;
-    }),
-  );
-  return updated;
+  return repository.update(id, { last_test: test } as Partial<Skill>);
 }
 
 export async function deleteSkill(id: string): Promise<boolean> {
-  let existed = false;
-  await updateCollection<Skill>(FILE, (skills) => {
-    existed = skills.some((s) => s.id === id);
-    return skills.filter((s) => s.id !== id);
-  });
-  return existed;
+  return repository.delete(id);
 }

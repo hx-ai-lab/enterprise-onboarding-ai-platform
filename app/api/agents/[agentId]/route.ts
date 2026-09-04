@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import {
   deleteAgent,
   getAgentById,
@@ -53,13 +53,21 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     body.bound_tool_ids = body.bound_tool_ids.filter((id) => toolIds.has(id));
   }
 
-  const agent = await updateAgent(agentId, body);
-  return NextResponse.json({ agent });
+  try {
+    const agent = await updateAgent(agentId, body);
+    return NextResponse.json({ agent });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }
 
 export async function DELETE(_req: Request, { params }: RouteContext) {
   const { agentId } = await params;
-  const existed = await deleteAgent(agentId);
-  if (!existed) return jsonError(404, `未找到 Agent:${agentId}`);
-  return NextResponse.json({ ok: true });
+  try {
+    const existed = await deleteAgent(agentId);
+    if (!existed) return jsonError(404, `未找到 Agent:${agentId}`);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }

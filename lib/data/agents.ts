@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, updateCollection } from "@/lib/data/json-store";
+import { SeedOverrideRepository } from "@/lib/data/seed-override-repository";
 import type { Agent } from "@/lib/types";
 
-const FILE = "agents.json";
+const repository = new SeedOverrideRepository<Agent>("agents.json", "agents");
 
 export function getAgents(): Promise<Agent[]> {
-  return readCollection<Agent>(FILE);
+  return repository.getAll();
 }
 
 export async function getAgentById(id: string): Promise<Agent | null> {
@@ -37,8 +37,7 @@ export async function createAgent(input: CreateAgentInput): Promise<Agent> {
     created_at: now,
     updated_at: now,
   };
-  await updateCollection<Agent>(FILE, (agents) => [...agents, agent]);
-  return agent;
+  return repository.create(agent);
 }
 
 export type UpdateAgentInput = Partial<
@@ -58,22 +57,9 @@ export async function updateAgent(
   id: string,
   input: UpdateAgentInput,
 ): Promise<Agent | null> {
-  let updated: Agent | null = null;
-  await updateCollection<Agent>(FILE, (agents) =>
-    agents.map((a) => {
-      if (a.id !== id) return a;
-      updated = { ...a, ...input, updated_at: new Date().toISOString() };
-      return updated;
-    }),
-  );
-  return updated;
+  return repository.update(id, input);
 }
 
 export async function deleteAgent(id: string): Promise<boolean> {
-  let existed = false;
-  await updateCollection<Agent>(FILE, (agents) => {
-    existed = agents.some((a) => a.id === id);
-    return agents.filter((a) => a.id !== id);
-  });
-  return existed;
+  return repository.delete(id);
 }

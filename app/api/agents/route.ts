@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import { createAgent, getAgents, type CreateAgentInput } from "@/lib/data/agents";
 import { getSkills } from "@/lib/data/skills";
 import { getTools } from "@/lib/data/tools";
@@ -25,14 +25,18 @@ export async function POST(req: Request) {
   const skillIds = new Set(skills.map((s) => s.id));
   const toolIds = new Set(tools.map((t) => t.id));
 
-  const agent = await createAgent({
-    name,
-    description,
-    system_prompt,
-    model_id,
-    bound_skill_ids: bound_skill_ids.filter((id) => skillIds.has(id)),
-    bound_tool_ids: bound_tool_ids.filter((id) => toolIds.has(id)),
-    enabled,
-  });
-  return NextResponse.json({ agent }, { status: 201 });
+  try {
+    const agent = await createAgent({
+      name,
+      description,
+      system_prompt,
+      model_id,
+      bound_skill_ids: bound_skill_ids.filter((id) => skillIds.has(id)),
+      bound_tool_ids: bound_tool_ids.filter((id) => toolIds.has(id)),
+      enabled,
+    });
+    return NextResponse.json({ agent }, { status: 201 });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }

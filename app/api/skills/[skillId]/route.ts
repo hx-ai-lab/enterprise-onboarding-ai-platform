@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import {
   deleteSkill,
   getSkillById,
@@ -37,13 +37,21 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     return jsonError(400, "模型参数不完整,需包含 model / temperature / max_tokens");
   }
 
-  const skill = await updateSkill(skillId, body);
-  return NextResponse.json({ skill });
+  try {
+    const skill = await updateSkill(skillId, body);
+    return NextResponse.json({ skill });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }
 
 export async function DELETE(_req: Request, { params }: RouteContext) {
   const { skillId } = await params;
-  const existed = await deleteSkill(skillId);
-  if (!existed) return jsonError(404, `未找到 Skill:${skillId}`);
-  return NextResponse.json({ ok: true });
+  try {
+    const existed = await deleteSkill(skillId);
+    if (!existed) return jsonError(404, `未找到 Skill:${skillId}`);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }

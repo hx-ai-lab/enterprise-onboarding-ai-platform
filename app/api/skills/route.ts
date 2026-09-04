@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import { createSkill, getSkills, type CreateSkillInput } from "@/lib/data/skills";
 
 export async function GET() {
@@ -25,6 +25,10 @@ export async function POST(req: Request) {
     return jsonError(400, "模型参数不完整,需包含 model / temperature / max_tokens");
   }
 
-  const skill = await createSkill({ name, description, prompt, model_params, enabled });
-  return NextResponse.json({ skill }, { status: 201 });
+  try {
+    const skill = await createSkill({ name, description, prompt, model_params, enabled });
+    return NextResponse.json({ skill }, { status: 201 });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }
