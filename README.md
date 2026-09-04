@@ -40,6 +40,9 @@ npm run dev
 
 打开 [http://localhost:3000](http://localhost:3000)。
 
+可运行 `npm run verify:storage` 执行隔离 namespace 下的持久化回归验证;脚本覆盖 Seed Override、Custom CRUD、
+Tombstone、Skill 测试结果、Run Log、服务重启读取及 Preview 缺少 Redis 时 fail-closed,并在结束后恢复本地 Demo 状态文件。
+
 ### 环境变量说明(`.env.example`)
 
 | 变量 | 说明 |

@@ -107,14 +107,16 @@ class RedisStorage implements RuntimeStorage {
         .zadd(keys.byAgent(log.agent_id), { score, member: log.id })
         .exec();
 
-      const overflow = await this.redis.zrange<string>(keys.all, 0, -(maxLogs + 1));
+      const overflow = await this.redis.zrange<string[]>(keys.all, 0, -(maxLogs + 1));
       if (overflow.length === 0) return;
 
-      const stored = await this.redis.hmget<(AgentRunLog | null)[]>(keys.items, ...overflow);
+      const stored =
+        (await this.redis.hmget<Record<string, AgentRunLog>>(keys.items, ...overflow)) ?? {};
       const tx = this.redis.multi().hdel(keys.items, ...overflow).zrem(keys.all, ...overflow);
-      stored.forEach((entry, index) => {
-        if (entry) tx.zrem(keys.byAgent(entry.agent_id), overflow[index]);
-      });
+      for (const id of overflow) {
+        const entry = stored[id];
+        if (entry) tx.zrem(keys.byAgent(entry.agent_id), id);
+      }
       await tx.exec();
     } catch {
       throw storageCause();
@@ -124,10 +126,10 @@ class RedisStorage implements RuntimeStorage {
   async getRunLogs(keys: RunLogKeys, agentId?: string): Promise<AgentRunLog[]> {
     try {
       const index = agentId ? keys.byAgent(agentId) : keys.all;
-      const ids = await this.redis.zrange<string>(index, 0, -1, { rev: true });
+      const ids = await this.redis.zrange<string[]>(index, 0, -1, { rev: true });
       if (ids.length === 0) return [];
-      const logs = await this.redis.hmget<(AgentRunLog | null)[]>(keys.items, ...ids);
-      return logs.filter((log): log is AgentRunLog => log !== null);
+      const logs = (await this.redis.hmget<Record<string, AgentRunLog>>(keys.items, ...ids)) ?? {};
+      return ids.flatMap((id) => (logs[id] ? [logs[id]] : []));
     } catch {
       throw storageCause();
     }
