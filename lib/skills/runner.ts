@@ -1,6 +1,13 @@
 import { getSkillById } from "@/lib/data/skills";
 import { CapabilityDisabledError, CapabilityNotFoundError } from "@/lib/errors";
-import { callLLM, extractJson, isLLMConfigured } from "@/lib/llm";
+import {
+  callLLM,
+  extractJson,
+  isLLMConfigured,
+  type LLMCallMetadata,
+  type LLMFailureType,
+} from "@/lib/llm";
+import { validateSkillOutput } from "@/lib/skills/contracts";
 import {
   mockComplianceReview,
   mockPolicyQa,
@@ -20,8 +27,11 @@ import type { Skill } from "@/lib/types";
 export type SkillRunResult = {
   output: unknown;
   mocked: boolean;
+  execution_mode: "llm" | "mock";
   mock_reason?: string;
-};
+  llm_failure_type?: LLMFailureType | "parse_error" | "schema_validation_error";
+  validation_error_summary?: string;
+} & LLMCallMetadata;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MockRunner = (input: any) => unknown;
@@ -50,6 +60,24 @@ async function runWithSkill(
 ): Promise<SkillRunResult> {
   const mockFn = MOCK_RUNNERS[skill.id] ?? genericMockRunner;
 
+  function validatedMock(
+    reason: string,
+    diagnostics: Omit<SkillRunResult, "output" | "mocked" | "execution_mode" | "mock_reason"> = {},
+  ): SkillRunResult {
+    const output = mockFn(input);
+    const validation = validateSkillOutput(skill.id, output);
+    if (!validation.ok) {
+      throw new Error(`内置 Mock 输出不符合 Skill 契约: ${validation.summary}`);
+    }
+    return {
+      output,
+      mocked: true,
+      execution_mode: "mock",
+      mock_reason: reason,
+      ...diagnostics,
+    };
+  }
+
   if (isLLMConfigured()) {
     const userPrompt = `以下是本次调用的输入数据(JSON):\n${JSON.stringify(
       input,
@@ -67,24 +95,47 @@ async function runWithSkill(
 
     if (result.ok) {
       const parsed = extractJson<unknown>(result.text);
-      if (parsed !== null && typeof parsed === "object") {
-        return { output: parsed, mocked: false };
+      if (parsed === null) {
+        return validatedMock("LLM 返回内容无法解析为 JSON,已使用 Mock 模式", {
+          llm_failure_type: "parse_error",
+          provider_status: result.provider_status,
+          finish_reason: result.finish_reason,
+          response_content_type: result.response_content_type,
+          provider_request_id: result.provider_request_id,
+        });
+      }
+      const validation = validateSkillOutput(skill.id, parsed);
+      if (!validation.ok) {
+        return validatedMock("LLM 返回 JSON 不符合 Skill 输出契约,已使用 Mock 模式", {
+          llm_failure_type: "schema_validation_error",
+          validation_error_summary: validation.summary,
+          provider_status: result.provider_status,
+          finish_reason: result.finish_reason,
+          response_content_type: result.response_content_type,
+          provider_request_id: result.provider_request_id,
+        });
       }
       return {
-        output: mockFn(input),
-        mocked: true,
-        mock_reason: "LLM 返回内容无法解析为 JSON,已使用 Mock 模式",
+        output: parsed,
+        mocked: false,
+        execution_mode: "llm",
+        provider_status: result.provider_status,
+        finish_reason: result.finish_reason,
+        response_content_type: result.response_content_type,
+        provider_request_id: result.provider_request_id,
       };
     }
 
-    return { output: mockFn(input), mocked: true, mock_reason: result.reason };
+    return validatedMock(result.reason, {
+      llm_failure_type: result.failure_type,
+      provider_status: result.provider_status,
+      finish_reason: result.finish_reason,
+      response_content_type: result.response_content_type,
+      provider_request_id: result.provider_request_id,
+    });
   }
 
-  return {
-    output: mockFn(input),
-    mocked: true,
-    mock_reason: "LLM 未配置,已使用 Mock 模式",
-  };
+  return validatedMock("LLM 未配置,已使用 Mock 模式", { llm_failure_type: "not_configured" });
 }
 
 /**

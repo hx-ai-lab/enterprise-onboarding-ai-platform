@@ -35,6 +35,18 @@ const STEP_STATUS_LABEL: Record<ExecutionStep["status"], string> = {
   skipped: "已跳过",
 };
 
+const LLM_FAILURE_LABEL: Record<NonNullable<ExecutionStep["llm_failure_type"]>, string> = {
+  not_configured: "LLM 未配置",
+  http_error: "HTTP Error",
+  timeout: "Timeout",
+  network_error: "Network Error",
+  response_json_error: "Response JSON Error",
+  response_shape_error: "Response Shape Error",
+  empty_content: "Empty Content",
+  parse_error: "Parse Error",
+  schema_validation_error: "Schema Validation Error",
+};
+
 export function RunStatusBanner({ status, error }: { status: RunStatus; error?: string }) {
   if (status === "success") return null;
   const isBlocked = status === "blocked";
@@ -142,6 +154,10 @@ export function StepList({ steps }: { steps: ExecutionStep[] }) {
               <span className="rounded border border-accent-subtle-border bg-accent-subtle px-1.5 py-0.5 text-[10px] text-accent-hover">
                 Mock 模式
               </span>
+            ) : step.execution_mode === "llm" ? (
+              <span className="rounded border border-green-200 bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">
+                Real LLM
+              </span>
             ) : null}
             <span className="ml-auto font-mono text-[10px] text-subtle-foreground">
               {step.duration_ms}ms
@@ -158,6 +174,18 @@ export function StepList({ steps }: { steps: ExecutionStep[] }) {
           {step.note ? (
             <div className="rounded-md border border-accent-subtle-border bg-accent-subtle px-2.5 py-1.5 text-xs text-accent-hover">
               {step.note}
+            </div>
+          ) : null}
+          {step.llm_failure_type ? (
+            <div className="grid gap-1 rounded-md border border-card-border bg-muted/40 px-2.5 py-2 text-[11px] sm:grid-cols-2">
+              <span>失败类型: <strong>{LLM_FAILURE_LABEL[step.llm_failure_type]}</strong> <code>({step.llm_failure_type})</code></span>
+              {step.provider_status ? <span>HTTP: {step.provider_status}</span> : null}
+              {step.response_content_type ? <span>Content: {step.response_content_type}</span> : null}
+              {step.finish_reason ? <span>Finish: {step.finish_reason}</span> : null}
+              {step.provider_request_id ? <span>Request ID: <code>{step.provider_request_id}</code></span> : null}
+              {step.validation_error_summary ? (
+                <span className="sm:col-span-2">校验: {step.validation_error_summary}</span>
+              ) : null}
             </div>
           ) : null}
 

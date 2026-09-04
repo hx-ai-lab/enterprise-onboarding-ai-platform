@@ -4,6 +4,7 @@ import { getEmployeeById, getEmployees } from "@/lib/data/reference-data";
 import { getSkillById, setSkillLastTest } from "@/lib/data/skills";
 import { buildSkillTestInput } from "@/lib/skills/test-harness";
 import { runSkill } from "@/lib/skills/runner";
+import { redactTraceValue } from "@/lib/trace-redaction";
 
 type RouteContext = { params: Promise<{ skillId: string }> };
 
@@ -33,16 +34,25 @@ export async function POST(req: Request, { params }: RouteContext) {
   try {
     const result = await runSkill(skillId, input);
     const tested_at = new Date().toISOString();
-    const inputStr = JSON.stringify(input, null, 2);
-    const outputStr = JSON.stringify(result.output, null, 2);
+    const safeInput = redactTraceValue(input);
+    const safeOutput = redactTraceValue(result.output);
+    const inputStr = JSON.stringify(safeInput, null, 2);
+    const outputStr = JSON.stringify(safeOutput, null, 2);
 
     await setSkillLastTest(skillId, { input: inputStr, output: outputStr, tested_at });
 
     return NextResponse.json({
-      input,
-      output: result.output,
+      input: safeInput,
+      output: safeOutput,
       mocked: result.mocked,
+      execution_mode: result.execution_mode,
       mock_reason: result.mock_reason,
+      llm_failure_type: result.llm_failure_type,
+      provider_status: result.provider_status,
+      finish_reason: result.finish_reason,
+      response_content_type: result.response_content_type,
+      provider_request_id: result.provider_request_id,
+      validation_error_summary: result.validation_error_summary,
       tested_at,
     });
   } catch (err) {

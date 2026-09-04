@@ -184,6 +184,23 @@ export type ExecutionStep = {
   /** informational note, e.g. why a Mock fallback was used — never an error */
   note?: string;
   mocked: boolean;
+  /** Whether the persisted output came from a validated LLM response or fallback. */
+  execution_mode: "llm" | "mock" | "tool";
+  llm_failure_type?:
+    | "not_configured"
+    | "http_error"
+    | "timeout"
+    | "network_error"
+    | "response_json_error"
+    | "response_shape_error"
+    | "empty_content"
+    | "parse_error"
+    | "schema_validation_error";
+  provider_status?: number;
+  finish_reason?: string;
+  response_content_type?: "string" | "array" | "missing" | "null" | "empty" | "unsupported";
+  provider_request_id?: string;
+  validation_error_summary?: string;
   duration_ms: number;
   /** marks steps appended dynamically by the compliance-retry loop */
   retry_of_step?: number;
