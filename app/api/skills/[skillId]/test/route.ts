@@ -53,6 +53,7 @@ export async function POST(req: Request, { params }: RouteContext) {
       response_content_type: result.response_content_type,
       provider_request_id: result.provider_request_id,
       validation_error_summary: result.validation_error_summary,
+      llm_retry_attempted: result.llm_retry_attempted,
       tested_at,
     });
   } catch (err) {

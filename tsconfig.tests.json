@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "ignoreDeprecations": "5.0",
+    "strict": true,
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": ".test-dist",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "lib/llm.ts",
+    "lib/trace-redaction.ts",
+    "lib/skills/contracts.ts",
+    "lib/skills/mocks.ts",
+    "lib/skills/llm-execution.ts",
+    "lib/types.ts"
+  ]
+}

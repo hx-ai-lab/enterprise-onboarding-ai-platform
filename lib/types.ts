@@ -195,12 +195,15 @@ export type ExecutionStep = {
     | "response_shape_error"
     | "empty_content"
     | "parse_error"
-    | "schema_validation_error";
+    | "schema_validation_error"
+    | "truncated_output";
   provider_status?: number;
   finish_reason?: string;
   response_content_type?: "string" | "array" | "missing" | "null" | "empty" | "unsupported";
   provider_request_id?: string;
   validation_error_summary?: string;
+  /** true when the internal LLM-level truncation retry (see lib/skills/llm-execution.ts) fired for this step */
+  llm_retry_attempted?: boolean;
   duration_ms: number;
   /** marks steps appended dynamically by the compliance-retry loop */
   retry_of_step?: number;
