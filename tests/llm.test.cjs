@@ -89,6 +89,71 @@ test("callLLM distinguishes response JSON errors", async () => {
   assert.equal(result.failure_type, "response_json_error");
 });
 
+test("callLLM surfaces safe diagnostics (model, endpoint_host, usage incl. reasoning_tokens) on success", async () => {
+  global.fetch = async () => new Response(
+    JSON.stringify({
+      choices: [{ finish_reason: "stop", message: { role: "assistant", content: '{"reply":"ok"}' } }],
+      usage: {
+        prompt_tokens: 200,
+        completion_tokens: 50,
+        total_tokens: 250,
+        completion_tokens_details: { reasoning_tokens: 30 },
+      },
+    }),
+    { status: 200 },
+  );
+  const result = await callLLM({ systemPrompt: "system", userPrompt: "user", model: "o1-mini" });
+  assert.equal(result.ok, true);
+  assert.equal(result.model, "o1-mini");
+  assert.equal(result.endpoint_host, "provider.invalid");
+  assert.equal(result.content_length, '{"reply":"ok"}'.length);
+  assert.deepEqual(result.usage, {
+    prompt_tokens: 200,
+    completion_tokens: 50,
+    total_tokens: 250,
+    reasoning_tokens: 30,
+  });
+  assert.deepEqual(result.response_shape.message_keys, ["role", "content"]);
+});
+
+test("callLLM reproduces the production symptom: HTTP 200, finish_reason=length, empty content, with reasoning_tokens visible in usage", async () => {
+  global.fetch = async () => new Response(
+    JSON.stringify({
+      choices: [{ finish_reason: "length", message: { role: "assistant", content: "" } }],
+      usage: {
+        prompt_tokens: 300,
+        completion_tokens: 900,
+        total_tokens: 1200,
+        completion_tokens_details: { reasoning_tokens: 900 },
+      },
+    }),
+    { status: 200 },
+  );
+  const result = await callLLM({ systemPrompt: "system", userPrompt: "user" });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure_type, "empty_content");
+  assert.equal(result.finish_reason, "length");
+  assert.equal(result.response_content_type, "empty");
+  assert.equal(result.content_length, 0);
+  assert.equal(result.usage.reasoning_tokens, 900);
+});
+
+test("callLLM never treats a provider reasoning_content field as the answer", async () => {
+  global.fetch = async () => new Response(
+    JSON.stringify({
+      choices: [{
+        finish_reason: "length",
+        message: { role: "assistant", reasoning_content: "internal chain of thought...", content: "" },
+      }],
+    }),
+    { status: 200 },
+  );
+  const result = await callLLM({ systemPrompt: "system", userPrompt: "user" });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure_type, "empty_content");
+  assert.deepEqual(result.response_shape.message_keys, ["role", "reasoning_content", "content"]);
+});
+
 test("callLLM classifies timeout separately from network errors", async () => {
   global.fetch = async (_url, options) => new Promise((_, reject) => {
     options.signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));

@@ -31,11 +31,30 @@ export type ResponseContentType =
   | "empty"
   | "unsupported";
 
+export type LLMUsage = {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  /** Present on reasoning-capable models (e.g. o1/o3/gpt-5-thinking-style APIs) that report a separate reasoning-token count under usage.completion_tokens_details. */
+  reasoning_tokens?: number;
+};
+
+export type LLMResponseShape = {
+  top_level_keys?: string[];
+  message_keys?: string[];
+};
+
 export type LLMCallMetadata = {
   provider_status?: number;
   finish_reason?: string;
   response_content_type?: ResponseContentType;
   provider_request_id?: string;
+  /** Safe-to-display request/response diagnostics — never includes secrets. */
+  model?: string;
+  endpoint_host?: string;
+  content_length?: number;
+  usage?: LLMUsage;
+  response_shape?: LLMResponseShape;
 };
 
 export type LLMCallResult =
@@ -186,6 +205,59 @@ function safeFinishReason(payload: unknown): string | undefined {
   return typeof value === "string" ? redactText(value).slice(0, 64) : undefined;
 }
 
+function safeNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/** Token accounting only — never touches message content, so nothing here needs redaction. */
+function safeUsage(payload: unknown): LLMUsage | undefined {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return undefined;
+  const usage = (payload as { usage?: unknown }).usage;
+  if (!usage || typeof usage !== "object" || Array.isArray(usage)) return undefined;
+  const u = usage as Record<string, unknown>;
+  const details = u.completion_tokens_details;
+  const reasoning_tokens =
+    details && typeof details === "object" && !Array.isArray(details)
+      ? safeNumber((details as Record<string, unknown>).reasoning_tokens)
+      : undefined;
+  const result: LLMUsage = {
+    prompt_tokens: safeNumber(u.prompt_tokens),
+    completion_tokens: safeNumber(u.completion_tokens),
+    total_tokens: safeNumber(u.total_tokens),
+    reasoning_tokens,
+  };
+  return Object.values(result).some((v) => v !== undefined) ? result : undefined;
+}
+
+/** JSON key names only (schema shape, never values) — still run through redactText defensively. */
+function safeKeyList(value: unknown): string[] | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const keys = Object.keys(value).slice(0, 20).map((k) => redactText(k).slice(0, 64));
+  return keys.length > 0 ? keys : undefined;
+}
+
+function safeResponseShape(payload: unknown): LLMResponseShape | undefined {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return undefined;
+  const top_level_keys = safeKeyList(payload);
+  const choices = (payload as { choices?: unknown }).choices;
+  const first = Array.isArray(choices) ? choices[0] : undefined;
+  const message =
+    first && typeof first === "object" && !Array.isArray(first)
+      ? (first as { message?: unknown }).message
+      : undefined;
+  const message_keys = safeKeyList(message);
+  if (!top_level_keys && !message_keys) return undefined;
+  return { top_level_keys, message_keys };
+}
+
+function safeEndpointHost(baseUrl: string): string | undefined {
+  try {
+    return new URL(baseUrl).host;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
   const apiKey = resolveApiKey();
   const baseUrlRaw = resolveBaseUrl();
@@ -199,6 +271,7 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
 
   const baseUrl = baseUrlRaw.replace(/\/+$/, "");
   const model = process.env.LLM_MODEL?.trim() || params.model || "gpt-4o-mini";
+  const requestMetadata = { model, endpoint_host: safeEndpointHost(baseUrl) };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), params.timeoutMs ?? TIMEOUT_MS);
 
@@ -230,12 +303,14 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
         reason: timedOut
           ? "LLM 调用超时,已使用 Mock 模式"
           : `LLM 网络调用失败(${redactText(error instanceof Error ? error.message : String(error))}),已使用 Mock 模式`,
+        ...requestMetadata,
       };
     }
 
     const metadata = {
       provider_status: res.status,
       provider_request_id: safeRequestId(res.headers),
+      ...requestMetadata,
     };
     if (!res.ok) {
       const body = redactText(await res.text().catch(() => "")).slice(0, 200);
@@ -260,6 +335,8 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
     }
 
     const finish_reason = safeFinishReason(json);
+    const usage = safeUsage(json);
+    const response_shape = safeResponseShape(json);
     const extracted = extractMessageContent(json);
     if (extracted.ok === false) {
       return {
@@ -268,6 +345,9 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
         reason: `${extracted.reason},已使用 Mock 模式`,
         response_content_type: extracted.contentType,
         finish_reason,
+        content_length: 0,
+        usage,
+        response_shape,
         ...metadata,
       };
     }
@@ -276,6 +356,9 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
       text: extracted.text,
       response_content_type: extracted.contentType,
       finish_reason,
+      content_length: extracted.text.length,
+      usage,
+      response_shape,
       ...metadata,
     };
   } finally {
