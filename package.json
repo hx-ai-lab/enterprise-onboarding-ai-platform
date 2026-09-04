@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "rm -rf .test-dist && tsc lib/llm.ts lib/trace-redaction.ts lib/skills/contracts.ts --outDir .test-dist --rootDir . --module commonjs --moduleResolution node --target ES2022 --lib ES2022,DOM --esModuleInterop --skipLibCheck && node --test tests/*.test.cjs && rm -rf .test-dist",
     "verify:storage": "node scripts/verify-storage.mjs"
   },
   "dependencies": {

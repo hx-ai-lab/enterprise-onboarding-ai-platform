@@ -4,6 +4,7 @@ import { getAgentById } from "@/lib/data/agents";
 import { appendLog } from "@/lib/data/logs";
 import { getEmployees } from "@/lib/data/reference-data";
 import { runAgent } from "@/lib/executor";
+import { redactTraceValue } from "@/lib/trace-redaction";
 
 type RouteContext = { params: Promise<{ agentId: string }> };
 
@@ -34,11 +35,11 @@ export async function POST(req: Request, { params }: RouteContext) {
       agent_name: agent.name,
       employee_id: employee.id,
       employee_name: employee.name,
-      question,
+      question: redactTraceValue(question) as string,
       plan: result.plan,
       steps: result.steps,
-      final_reply: result.final_reply,
-      compliance: result.compliance,
+      final_reply: redactTraceValue(result.final_reply) as string | null,
+      compliance: redactTraceValue(result.compliance) as typeof result.compliance,
       status: result.status,
       error: result.error,
       duration_ms: result.duration_ms,

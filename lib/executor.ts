@@ -16,6 +16,7 @@ import {
 } from "@/lib/skills/mocks";
 import { runSkill } from "@/lib/skills/runner";
 import { runTool } from "@/lib/tools/runners";
+import { redactTraceValue } from "@/lib/trace-redaction";
 import type {
   Agent,
   ComplianceResult,
@@ -54,10 +55,10 @@ function employeeContext(e: Employee) {
 
 function describeError(err: unknown): string {
   if (err instanceof CapabilityDisabledError || err instanceof CapabilityNotFoundError) {
-    return err.message;
+    return String(redactTraceValue(err.message));
   }
-  if (err instanceof Error) return err.message;
-  return String(err);
+  if (err instanceof Error) return String(redactTraceValue(err.message));
+  return String(redactTraceValue(String(err)));
 }
 
 function stepBase(step: PlanStep) {
@@ -131,16 +132,25 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
     const t0 = Date.now();
     try {
       const output = await runTool(step.capability_id, input, toolCtx);
-      steps.push({ ...stepBase(step), status: "success", input, output, mocked: false, duration_ms: Date.now() - t0 });
+      steps.push({
+        ...stepBase(step),
+        status: "success",
+        input: redactTraceValue(input),
+        output: redactTraceValue(output),
+        mocked: false,
+        execution_mode: "tool",
+        duration_ms: Date.now() - t0,
+      });
       return output;
     } catch (err) {
       steps.push({
         ...stepBase(step),
         status: "error",
-        input,
+        input: redactTraceValue(input),
         output: null,
         error: describeError(err),
         mocked: false,
+        execution_mode: "tool",
         duration_ms: Date.now() - t0,
       });
       return null;
@@ -157,10 +167,17 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
       steps.push({
         ...stepBase(step),
         status: "success",
-        input,
-        output: result.output,
+        input: redactTraceValue(input),
+        output: redactTraceValue(result.output),
         note: result.mocked ? result.mock_reason : undefined,
         mocked: result.mocked,
+        execution_mode: result.execution_mode,
+        llm_failure_type: result.llm_failure_type,
+        provider_status: result.provider_status,
+        finish_reason: result.finish_reason,
+        response_content_type: result.response_content_type,
+        provider_request_id: result.provider_request_id,
+        validation_error_summary: result.validation_error_summary,
         duration_ms: Date.now() - t0,
       });
       return { output: result.output, ok: true };
@@ -168,10 +185,11 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
       steps.push({
         ...stepBase(step),
         status: "error",
-        input,
+        input: redactTraceValue(input),
         output: null,
         error: describeError(err),
         mocked: false,
+        execution_mode: "llm",
         duration_ms: Date.now() - t0,
       });
       return { output: null, ok: false };
@@ -309,10 +327,17 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
             ? complianceStep.purpose
             : `根据审核建议重新生成回复后再次审核(第 ${attempt} 次)`,
         status: "success",
-        input,
-        output,
+        input: redactTraceValue(input),
+        output: redactTraceValue(output),
         note: result.mocked ? result.mock_reason : undefined,
         mocked: result.mocked,
+        execution_mode: result.execution_mode,
+        llm_failure_type: result.llm_failure_type,
+        provider_status: result.provider_status,
+        finish_reason: result.finish_reason,
+        response_content_type: result.response_content_type,
+        provider_request_id: result.provider_request_id,
+        validation_error_summary: result.validation_error_summary,
         duration_ms: Date.now() - t0,
         retry_of_step: attempt > 1 ? complianceStep.step : undefined,
       });
@@ -340,10 +365,17 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         capability_name: replyGenStep.capability_name,
         purpose: "根据合规审核建议重新生成回复",
         status: "success",
-        input: regenInput,
-        output: regenOutput,
+        input: redactTraceValue(regenInput),
+        output: redactTraceValue(regenOutput),
         note: regenResult.mocked ? regenResult.mock_reason : undefined,
         mocked: regenResult.mocked,
+        execution_mode: regenResult.execution_mode,
+        llm_failure_type: regenResult.llm_failure_type,
+        provider_status: regenResult.provider_status,
+        finish_reason: regenResult.finish_reason,
+        response_content_type: regenResult.response_content_type,
+        provider_request_id: regenResult.provider_request_id,
+        validation_error_summary: regenResult.validation_error_summary,
         duration_ms: Date.now() - regenT0,
         retry_of_step: replyGenStep.step,
       });
@@ -356,10 +388,11 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         capability_name: complianceStep.capability_name,
         purpose: complianceStep.purpose,
         status: "error",
-        input,
+        input: redactTraceValue(input),
         output: null,
         error: describeError(err),
         mocked: false,
+        execution_mode: "llm",
         duration_ms: Date.now() - t0,
         retry_of_step: attempt > 1 ? complianceStep.step : undefined,
       });
