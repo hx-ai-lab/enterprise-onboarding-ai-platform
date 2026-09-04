@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { capabilityErrorResponse, jsonError, parseJsonBody } from "@/lib/api-utils";
+import { capabilityErrorResponse, jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import { getEmployeeById, getEmployees } from "@/lib/data/reference-data";
 import { getSkillById, setSkillLastTest } from "@/lib/data/skills";
 import { buildSkillTestInput } from "@/lib/skills/test-harness";
@@ -48,6 +48,11 @@ export async function POST(req: Request, { params }: RouteContext) {
   } catch (err) {
     const mapped = capabilityErrorResponse(err);
     if (mapped) return mapped;
+    try {
+      return storageErrorResponse(err);
+    } catch {
+      // Not a storage error; preserve the test endpoint's existing message below.
+    }
     const message = err instanceof Error ? err.message : String(err);
     return jsonError(500, `测试执行失败:${message}`);
   }

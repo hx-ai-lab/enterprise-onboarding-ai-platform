@@ -1,19 +1,20 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, updateCollection } from "@/lib/data/json-store";
+import { getRuntimeStorage, storageKey, type RunLogKeys } from "@/lib/storage/runtime-storage";
 import type { AgentRunLog } from "@/lib/types";
 
-const FILE = "logs.json";
 const MAX_LOGS = 300;
+const KEYS: RunLogKeys = {
+  items: storageKey("run-logs:items"),
+  all: storageKey("run-logs:all"),
+  byAgent: (agentId) => storageKey(`run-logs:by-agent:${agentId}`),
+};
 
 export function getLogs(): Promise<AgentRunLog[]> {
-  return readCollection<AgentRunLog>(FILE);
+  return getRuntimeStorage().getRunLogs(KEYS);
 }
 
 export async function getLogsByAgent(agentId: string): Promise<AgentRunLog[]> {
-  const logs = await getLogs();
-  return logs
-    .filter((l) => l.agent_id === agentId)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return getRuntimeStorage().getRunLogs(KEYS, agentId);
 }
 
 export async function getLogById(id: string): Promise<AgentRunLog | null> {
@@ -29,10 +30,6 @@ export async function appendLog(
     id: `log-${randomUUID().slice(0, 8)}`,
     created_at: new Date().toISOString(),
   };
-  await updateCollection<AgentRunLog>(FILE, (logs) => {
-    const next = [...logs, log];
-    // Bound file growth for a long-running demo instance.
-    return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
-  });
+  await getRuntimeStorage().appendRunLog(KEYS, log, MAX_LOGS);
   return log;
 }

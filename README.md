@@ -19,7 +19,7 @@ Enterprise Onboarding AI Assistant Operations & Evaluation Platform.
 ## 技术栈与数据层
 
 - **框架**:Next.js (App Router) + TypeScript,业务 API 使用 Route Handlers(`app/api/**`),未新建独立后端
-- **数据层**:本地 JSON 文件模拟数据库,存放于项目根目录 `/mock-data`;未接入真实数据库、未使用 Prisma
+- **数据层**:仓库 `/mock-data` 保存只读 Demo Seed;Upstash Redis 保存运行时状态;未使用 Prisma/ORM
 - **大模型调用**:通过环境变量配置 API Key / Base URL / 模型名称,默认 **Mock 模式**——未配置或调用失败时自动降级为本地规则化模拟输出,保证项目随时可演示,不会报错崩溃
 - **身份模拟**:未接入真实登录;顶部导航栏右上角提供「切换模拟员工身份」下拉选择,用于以不同员工视角测试
 
@@ -49,6 +49,9 @@ npm run dev
 | `LLM_BASE_URL` | OpenAI 兼容的 Chat Completions 接口 Base URL(例如接入非 OpenAI 的兼容服务),请求会 POST 到 `${LLM_BASE_URL}/chat/completions`;仅在需要覆盖默认的 OpenAI 地址时才需要设置 |
 | `LLM_MODEL` | 部署级模型名称,设置后对所有 Skill 生效(优先级高于每个 Skill 自己保存的 `model_params.model`),用于整体切换到非 OpenAI 的模型(如接入 DeepSeek 时设为 `deepseek-v4-flash` 等);不设置时才会使用各 Skill 编辑页里保存的模型 |
 | `PORT` | 本地启动端口(可选) |
+| `KV_REST_API_URL` | Upstash Redis REST URL;Vercel Upstash Integration 自动提供,不要提交实际值 |
+| `KV_REST_API_TOKEN` | Upstash Redis 读写 Token;Vercel Upstash Integration 自动提供,不要提交实际值 |
+| `STORAGE_NAMESPACE` | 可选的本地/测试 namespace 覆盖;Vercel 自动使用 `VERCEL_ENV` 隔离 Production 与 Preview |
 
 `.env.local` 用于存放本地真实配置,已被 `.gitignore` 忽略,请勿提交真实密钥;`.env.example` 仅列出变量名。
 
@@ -58,17 +61,33 @@ npm run dev
 - 真实调用失败(网络错误、超时、非 2xx 状态码、返回内容无法解析为 JSON)时同样会静默降级为 Mock 输出,并在执行明细中用文字提示「已使用 Mock 模式」及具体原因,不会导致请求失败
 - Agent 运行页 / Skill 测试页的每一步都会标注 `mocked` 状态,方便区分本次输出来自真实模型还是 Mock
 
-### 部署到只读文件系统(如 Vercel)时的行为
+### 数据持久化架构
 
-Serverless 平台(如 Vercel)在运行时会将部署目录挂载为只读文件系统,直接写入 `mock-data/*.json` 会抛出
-`EROFS`/`EPERM`。`lib/data/json-store.ts` 会在每个实例首次读写时探测 `mock-data` 目录是否可写:
+**Seed JSON = Demo 基础数据;Upstash Redis = Runtime Persistent State。**
 
-- 可写(本地开发、传统服务器部署等):直接读写项目内的 `mock-data/*.json`,改动会体现在磁盘上
-- 只读(如 Vercel):自动降级为把 `mock-data` 复制一份到系统临时目录(`os.tmpdir()`)并在该副本上读写
+- `employees.json`、`onboarding_tasks.json`、`contacts.json`、`policies.json`、`trainings.json` 始终只读,不会迁移或写回
+- Agent / Skill / Tool 从 Seed JSON 开始;Seed 被修改后写 Redis Override,新建对象写 Redis Custom,删除 Seed 写 Redis Tombstone
+- Agent Run Log(包括 Planner → Executor → Compliance 的完整 Trace)只写 Redis,不再写仓库文件或 `/tmp`
+- Redis key 使用 `onboardops:v1:<environment>:*`;Vercel Production 与 Preview 分别使用 `production`、`preview`,互不污染
+- 后续 Bad Cases、Evaluation Cases、Evaluation Runs 可沿用同一版本化 namespace 和 Repository/Adapter,本版本不提供相关 UI
 
-这保证了 Skill/Tool/Agent 的编辑、启用禁用、测试、Agent 运行日志等写操作在只读部署环境下也不会 500,
-但请注意:只读环境下的写入只在当前实例的生命周期内有效,实例冷启动后会重置为仓库中的初始数据——这是
-用本地 JSON 文件模拟数据库、且部署到无持久化存储环境下的固有限制;如需真正持久化,请接入真实数据库。
+当前 Redis key 设计:
+
+| 数据 | Key / Redis 类型 |
+|---|---|
+| Seed 配置覆盖 | `onboardops:v1:<environment>:{agents|skills|tools}:overrides` / Hash |
+| 用户新建配置 | `onboardops:v1:<environment>:{agents|skills|tools}:custom` / Hash |
+| 已删除 Seed | `onboardops:v1:<environment>:{agents|skills|tools}:tombstones` / Set |
+| Run Log 正文 | `onboardops:v1:<environment>:run-logs:items` / Hash |
+| Run Log 全局时间索引 | `onboardops:v1:<environment>:run-logs:all` / Sorted Set |
+| Agent Run Log 索引 | `onboardops:v1:<environment>:run-logs:by-agent:<agentId>` / Sorted Set |
+
+`production` 与 `preview` 是固定隔离的 Vercel namespace。Bad Cases、Evaluation Cases、Evaluation Runs 后续分别使用
+`bad-cases:*`、`evaluations:cases:*`、`evaluations:runs:*`,本阶段只保留 namespace 扩展约定,不提前创建数据或界面。
+
+Vercel Production / Preview 必须同时提供 `KV_REST_API_URL` 和 `KV_REST_API_TOKEN`。配置缺失或 Redis 请求失败时,
+API 会失败且 UI 不会显示保存成功;线上环境绝不回退本地文件、Memory 或 `/tmp`。本地未配置 Redis 时会在服务端明确警告,
+并使用被 Git 忽略的 `.data/runtime-state.json` Demo fallback,方便刷新和重启开发服务器后继续演示。
 
 ## 示例提问
 
@@ -110,7 +129,8 @@ app/api/
 
 lib/
 ├── types.ts                     # 领域模型类型定义
-├── data/                        # mock-data 读写(带写入互斥锁)
+├── data/                        # 领域 Repository 入口 + 只读 Seed JSON
+├── storage/                     # Upstash Redis / 本地 Demo Storage Adapter
 ├── llm.ts                       # LLM 客户端(OpenAI 兼容),含 Mock 判定
 ├── tools/runners.ts             # 6 个 Tool 的真实执行逻辑
 ├── skills/{mocks,runner}.ts     # 6 个 Skill 的 Mock 规则 + 真实 LLM 调用
@@ -156,15 +176,15 @@ lib/
 
 ## JSON 数据结构说明
 
-所有数据文件位于 `/mock-data`,均为**完全虚构**的演示数据:
+所有 Seed 数据文件位于 `/mock-data`,均为**完全虚构**的演示数据。Seed 文件只读,用户操作不会写回 Git:
 
 - `employees.json`:12 名虚构员工,覆盖技术/产品/市场/人力资源/财务/行政/法务/销售等部门与 5 种入职阶段
 - `onboarding_tasks.json`:112 条入职任务,按员工与入职阶段生成,含状态/优先级/截止日期/依赖关系
 - `contacts.json`:10 位虚构联系人,覆盖 HR/IT/行政/培训/财务/部门负责人角色
 - `policies.json`:9 条制度,覆盖员工手册/考勤/请假/报销/信息安全/社保公积金/试用期等类别
 - `trainings.json`:10 项培训计划,覆盖通用/岗位/信息安全/企业文化
-- `skills.json` / `tools.json` / `agents.json`:Skill / Tool / Agent 的配置数据
-- `logs.json`:Agent 运行日志(按 `agent_id` 关联,超过 300 条自动裁剪最早的记录)
+- `skills.json` / `tools.json` / `agents.json`:Skill / Tool / Agent 的初始 Seed 配置;运行时覆盖和自定义对象存于 Redis
+- `logs.json`:仅保留为空的历史 Demo 文件,运行时不再读取;Redis 中的 Agent Run Log 按 `agent_id` 建索引并最多保留 300 条
 
 具体字段定义见 `lib/types.ts`。
 

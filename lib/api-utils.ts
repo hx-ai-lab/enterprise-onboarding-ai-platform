@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CapabilityDisabledError, CapabilityNotFoundError } from "@/lib/errors";
+import { StorageUnavailableError } from "@/lib/storage/runtime-storage";
 
 export function jsonError(status: number, message: string) {
   return NextResponse.json({ error: message }, { status });
@@ -18,4 +19,10 @@ export function capabilityErrorResponse(err: unknown): ReturnType<typeof jsonErr
   if (err instanceof CapabilityDisabledError) return jsonError(409, err.message);
   if (err instanceof CapabilityNotFoundError) return jsonError(404, err.message);
   return null;
+}
+
+/** Return a safe persistence error without exposing Redis connection details. */
+export function storageErrorResponse(err: unknown): ReturnType<typeof jsonError> {
+  if (err instanceof StorageUnavailableError) return jsonError(503, err.message);
+  throw err;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import { createTool, getTools, type CreateToolInput } from "@/lib/data/tools";
 
 export async function GET() {
@@ -16,6 +16,10 @@ export async function POST(req: Request) {
   if (!description?.trim()) return jsonError(400, "描述不能为空");
   if (!data_source?.trim()) return jsonError(400, "数据源文件名不能为空");
 
-  const tool = await createTool({ name, description, data_source, enabled });
-  return NextResponse.json({ tool }, { status: 201 });
+  try {
+    const tool = await createTool({ name, description, data_source, enabled });
+    return NextResponse.json({ tool }, { status: 201 });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }

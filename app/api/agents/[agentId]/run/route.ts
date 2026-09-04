@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import { getAgentById } from "@/lib/data/agents";
 import { appendLog } from "@/lib/data/logs";
 import { getEmployees } from "@/lib/data/reference-data";
@@ -25,11 +25,11 @@ export async function POST(req: Request, { params }: RouteContext) {
 
   const result = await runAgent({ agent, employee, allEmployees: employees, question });
 
-  // The run itself already succeeded (or failed) by this point — a logging
-  // failure is a side effect we don't want to lose the actual result over.
-  let logId: string | null = null;
+  // A run is complete only after its trace has been persisted. Storage errors
+  // propagate to the route error boundary instead of reporting false success.
+  let log;
   try {
-    const log = await appendLog({
+    log = await appendLog({
       agent_id: agent.id,
       agent_name: agent.name,
       employee_id: employee.id,
@@ -43,10 +43,9 @@ export async function POST(req: Request, { params }: RouteContext) {
       error: result.error,
       duration_ms: result.duration_ms,
     });
-    logId = log.id;
   } catch (err) {
-    console.error("[agents/run] failed to write execution log:", err);
+    return storageErrorResponse(err);
   }
 
-  return NextResponse.json({ ...result, log_id: logId, employee });
+  return NextResponse.json({ ...result, log_id: log.id, employee });
 }

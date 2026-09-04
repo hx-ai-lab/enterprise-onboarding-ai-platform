@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody } from "@/lib/api-utils";
+import { jsonError, parseJsonBody, storageErrorResponse } from "@/lib/api-utils";
 import {
   deleteTool,
   getToolById,
@@ -28,13 +28,21 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   if (body.description !== undefined && !body.description.trim()) return jsonError(400, "描述不能为空");
   if (body.data_source !== undefined && !body.data_source.trim()) return jsonError(400, "数据源文件名不能为空");
 
-  const tool = await updateTool(toolId, body);
-  return NextResponse.json({ tool });
+  try {
+    const tool = await updateTool(toolId, body);
+    return NextResponse.json({ tool });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }
 
 export async function DELETE(_req: Request, { params }: RouteContext) {
   const { toolId } = await params;
-  const existed = await deleteTool(toolId);
-  if (!existed) return jsonError(404, `未找到 Tool:${toolId}`);
-  return NextResponse.json({ ok: true });
+  try {
+    const existed = await deleteTool(toolId);
+    if (!existed) return jsonError(404, `未找到 Tool:${toolId}`);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return storageErrorResponse(err);
+  }
 }
