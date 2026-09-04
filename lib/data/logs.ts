@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readCollection, updateCollection } from "@/lib/data/json-store";
+import { readCollection, updateCollection } from "@/lib/data/kv-store";
 import type { AgentRunLog } from "@/lib/types";
 
 const FILE = "logs.json";
