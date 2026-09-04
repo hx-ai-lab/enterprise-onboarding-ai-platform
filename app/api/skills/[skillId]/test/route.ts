@@ -54,6 +54,11 @@ export async function POST(req: Request, { params }: RouteContext) {
       provider_request_id: result.provider_request_id,
       validation_error_summary: result.validation_error_summary,
       llm_retry_attempted: result.llm_retry_attempted,
+      model: result.model,
+      endpoint_host: result.endpoint_host,
+      content_length: result.content_length,
+      usage: result.usage,
+      response_shape: result.response_shape,
       tested_at,
     });
   } catch (err) {

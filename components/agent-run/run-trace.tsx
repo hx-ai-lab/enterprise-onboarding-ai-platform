@@ -177,15 +177,30 @@ export function StepList({ steps }: { steps: ExecutionStep[] }) {
               {step.note}
             </div>
           ) : null}
-          {step.llm_failure_type || step.llm_retry_attempted ? (
+          {step.llm_failure_type || step.llm_retry_attempted || step.model || step.usage ? (
             <div className="grid gap-1 rounded-md border border-card-border bg-muted/40 px-2.5 py-2 text-[11px] sm:grid-cols-2">
               {step.llm_failure_type ? (
                 <span>失败类型: <strong>{LLM_FAILURE_LABEL[step.llm_failure_type]}</strong> <code>({step.llm_failure_type})</code></span>
               ) : null}
               {step.provider_status ? <span>HTTP: {step.provider_status}</span> : null}
               {step.response_content_type ? <span>Content: {step.response_content_type}</span> : null}
+              {step.content_length !== undefined ? <span>Content Length: {step.content_length}</span> : null}
               {step.finish_reason ? <span>Finish: {step.finish_reason}</span> : null}
+              {step.model ? <span>Model: <code>{step.model}</code></span> : null}
+              {step.endpoint_host ? <span>Endpoint: <code>{step.endpoint_host}</code></span> : null}
               {step.provider_request_id ? <span>Request ID: <code>{step.provider_request_id}</code></span> : null}
+              {step.usage ? (
+                <span className="sm:col-span-2">
+                  Tokens: prompt={step.usage.prompt_tokens ?? "-"} completion={step.usage.completion_tokens ?? "-"}
+                  {step.usage.reasoning_tokens !== undefined ? ` reasoning=${step.usage.reasoning_tokens}` : ""} total=
+                  {step.usage.total_tokens ?? "-"}
+                </span>
+              ) : null}
+              {step.response_shape?.message_keys ? (
+                <span className="sm:col-span-2">
+                  message keys: <code>{step.response_shape.message_keys.join(", ")}</code>
+                </span>
+              ) : null}
               {step.llm_retry_attempted ? (
                 <span className="sm:col-span-2">已触发截断重试(max_tokens 提升 + 严格 JSON 约束)</span>
               ) : null}

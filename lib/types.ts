@@ -1,6 +1,8 @@
 // Shared domain types for the Agent / Skill / Tool platform.
 // Mirrors the JSON shapes stored under /mock-data.
 
+import type { LLMResponseShape, LLMUsage } from "@/lib/llm";
+
 export type OnboardingStage =
   | "first_day"
   | "first_week"
@@ -204,6 +206,12 @@ export type ExecutionStep = {
   validation_error_summary?: string;
   /** true when the internal LLM-level truncation retry (see lib/skills/llm-execution.ts) fired for this step */
   llm_retry_attempted?: boolean;
+  /** Safe-to-display request/response diagnostics — never includes secrets. See lib/llm.ts. */
+  model?: string;
+  endpoint_host?: string;
+  content_length?: number;
+  usage?: LLMUsage;
+  response_shape?: LLMResponseShape;
   duration_ms: number;
   /** marks steps appended dynamically by the compliance-retry loop */
   retry_of_step?: number;
