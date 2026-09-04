@@ -178,6 +178,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         response_content_type: result.response_content_type,
         provider_request_id: result.provider_request_id,
         validation_error_summary: result.validation_error_summary,
+        llm_retry_attempted: result.llm_retry_attempted,
         duration_ms: Date.now() - t0,
       });
       return { output: result.output, ok: true };
@@ -338,6 +339,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         response_content_type: result.response_content_type,
         provider_request_id: result.provider_request_id,
         validation_error_summary: result.validation_error_summary,
+        llm_retry_attempted: result.llm_retry_attempted,
         duration_ms: Date.now() - t0,
         retry_of_step: attempt > 1 ? complianceStep.step : undefined,
       });
@@ -376,6 +378,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         response_content_type: regenResult.response_content_type,
         provider_request_id: regenResult.provider_request_id,
         validation_error_summary: regenResult.validation_error_summary,
+        llm_retry_attempted: regenResult.llm_retry_attempted,
         duration_ms: Date.now() - regenT0,
         retry_of_step: replyGenStep.step,
       });

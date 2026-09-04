@@ -45,6 +45,7 @@ const LLM_FAILURE_LABEL: Record<NonNullable<ExecutionStep["llm_failure_type"]>, 
   empty_content: "Empty Content",
   parse_error: "Parse Error",
   schema_validation_error: "Schema Validation Error",
+  truncated_output: "Truncated Output",
 };
 
 export function RunStatusBanner({ status, error }: { status: RunStatus; error?: string }) {
@@ -176,13 +177,18 @@ export function StepList({ steps }: { steps: ExecutionStep[] }) {
               {step.note}
             </div>
           ) : null}
-          {step.llm_failure_type ? (
+          {step.llm_failure_type || step.llm_retry_attempted ? (
             <div className="grid gap-1 rounded-md border border-card-border bg-muted/40 px-2.5 py-2 text-[11px] sm:grid-cols-2">
-              <span>失败类型: <strong>{LLM_FAILURE_LABEL[step.llm_failure_type]}</strong> <code>({step.llm_failure_type})</code></span>
+              {step.llm_failure_type ? (
+                <span>失败类型: <strong>{LLM_FAILURE_LABEL[step.llm_failure_type]}</strong> <code>({step.llm_failure_type})</code></span>
+              ) : null}
               {step.provider_status ? <span>HTTP: {step.provider_status}</span> : null}
               {step.response_content_type ? <span>Content: {step.response_content_type}</span> : null}
               {step.finish_reason ? <span>Finish: {step.finish_reason}</span> : null}
               {step.provider_request_id ? <span>Request ID: <code>{step.provider_request_id}</code></span> : null}
+              {step.llm_retry_attempted ? (
+                <span className="sm:col-span-2">已触发截断重试(max_tokens 提升 + 严格 JSON 约束)</span>
+              ) : null}
               {step.validation_error_summary ? (
                 <span className="sm:col-span-2">校验: {step.validation_error_summary}</span>
               ) : null}

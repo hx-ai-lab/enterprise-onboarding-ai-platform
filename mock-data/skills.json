@@ -22,7 +22,7 @@
     "model_params": {
       "model": "gpt-4o-mini",
       "temperature": 0.3,
-      "max_tokens": 800
+      "max_tokens": 1100
     },
     "enabled": true,
     "last_test": null,
@@ -33,11 +33,11 @@
     "id": "skill-process-explain",
     "name": "入职流程解释 Skill",
     "description": "基于已查询到的任务/制度数据,生成步骤化、面向新员工的入职流程说明,不得编造制度、联系人或时间信息。",
-    "prompt": "你是企业入职助手的流程讲解模块。请基于传入的任务列表与(可选的)制度信息,生成步骤化的入职流程说明,面向新员工,语言友好清晰。严禁编造未在输入数据中出现的制度名称、联系人姓名或具体时间;如输入数据不足以说明某一环节,请在该步骤中明确说明信息暂不完整,建议员工联系相关负责人确认。输出 JSON,字段包括:steps(数组,每项含 step、title、description),notes(注意事项文本)。严格输出 JSON,不要输出多余文字。",
+    "prompt": "你是企业入职助手的流程讲解模块。请基于传入的任务列表与(可选的)制度信息,生成步骤化的入职流程说明,面向新员工,语言友好清晰。严禁编造未在输入数据中出现的制度名称、联系人姓名或具体时间;如输入数据不足以说明某一环节,请在该步骤中明确说明信息暂不完整,建议员工联系相关负责人确认。每个步骤的 description 请简洁,控制在两三句话以内,避免逐字复述任务详情。输出 JSON,字段包括:steps(数组,每项含 step、title、description),notes(注意事项文本)。严格输出 JSON,不要输出多余文字。",
     "model_params": {
       "model": "gpt-4o-mini",
       "temperature": 0.4,
-      "max_tokens": 900
+      "max_tokens": 1200
     },
     "enabled": true,
     "last_test": null,
@@ -52,7 +52,7 @@
     "model_params": {
       "model": "gpt-4o-mini",
       "temperature": 0.2,
-      "max_tokens": 700
+      "max_tokens": 800
     },
     "enabled": true,
     "last_test": null,
@@ -63,11 +63,11 @@
     "id": "skill-reply-generation",
     "name": "入职沟通话术生成 Skill",
     "description": "汇总前序步骤结果,生成自然友好、面向新员工的最终回复;不得暴露内部 Planner/Skill/Tool/JSON 等技术细节;涉及薪酬/社保/公积金时避免确定性承诺。",
-    "prompt": "你是企业入职助手的话术生成模块。请基于前序步骤产出的结构化结果(任务推荐、流程说明、制度问答、联系人、培训信息等),生成一段自然、友好、面向新员工的中文回复。要求:1)不得出现“Planner”“Skill”“Tool”“JSON”等内部实现细节词汇;2)如涉及薪酬、社保、公积金等具体到账时间或金额,措辞需谨慎,避免绝对化承诺(禁止使用“肯定”“保证”“百分之百”等词),应引导员工以系统实际记录或对应负责人确认为准;3)仅使用传入数据中的事实,不得编造。输出 JSON,字段包括:reply(最终回复正文)。严格输出 JSON,不要输出多余文字。",
+    "prompt": "你是企业入职助手的话术生成模块。请基于前序步骤产出的结构化结果(任务推荐、流程说明、制度问答、联系人、培训信息等),生成一段自然、友好、面向新员工的中文回复。要求:1)不得出现“Planner”“Skill”“Tool”“JSON”等内部实现细节词汇;2)如涉及薪酬、社保、公积金等具体到账时间或金额,措辞需谨慎,避免绝对化承诺(禁止使用“肯定”“保证”“百分之百”等词),应引导员工以系统实际记录或对应负责人确认为准;3)仅使用传入数据中的事实,不得编造;4)回复应简洁清晰,合理归纳合并相关信息,避免逐条复述所有原始数据字段。输出 JSON,字段包括:reply(最终回复正文)。严格输出 JSON,不要输出多余文字。",
     "model_params": {
       "model": "gpt-4o-mini",
       "temperature": 0.6,
-      "max_tokens": 900
+      "max_tokens": 1600
     },
     "enabled": true,
     "last_test": null,
@@ -82,7 +82,7 @@
     "model_params": {
       "model": "gpt-4o-mini",
       "temperature": 0.1,
-      "max_tokens": 700
+      "max_tokens": 1600
     },
     "enabled": true,
     "last_test": null,
