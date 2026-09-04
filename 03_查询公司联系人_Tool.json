@@ -1,0 +1,137 @@
+{
+  "id": "tool_company_contact_query",
+  "name": "查询公司联系人 Tool",
+  "code": "company_contact_query",
+  "type": "local_json_query",
+  "enabled": true,
+  "description": "根据城市、部门、角色或问题类型查询 HR、IT、行政、培训、财务、直属上级、部门助理等联系人信息。",
+  "data_source": {
+    "file": "contacts.json",
+    "primary_key": "contact_id"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "city": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "北京",
+          "上海",
+          "深圳",
+          "杭州",
+          null
+        ]
+      },
+      "department": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "contact_role": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "HR",
+          "IT",
+          "行政",
+          "培训负责人",
+          "财务",
+          "直属上级",
+          "部门助理",
+          "信息安全负责人",
+          null
+        ]
+      },
+      "issue_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "入职报到",
+          "材料提交",
+          "账号问题",
+          "电脑设备",
+          "门禁工位",
+          "培训安排",
+          "报销问题",
+          "社保公积金",
+          "系统权限",
+          null
+        ]
+      },
+      "employee_id": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "员工编号，用于查询其直属 HR 或直属上级。"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "matched_count": {
+        "type": "integer"
+      },
+      "contacts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "contact_id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "department": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "enterprise_email": {
+              "type": "string"
+            },
+            "work_contact": {
+              "type": "string"
+            },
+            "support_scope": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "available_channel": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "rules": [
+    "只返回业务必要的企业联系信息。",
+    "不得返回私人手机号、家庭住址、身份证、银行卡等敏感信息。",
+    "不得返回与当前员工或当前问题无关的联系人。",
+    "如果无法确定联系人，应返回通用角色建议，例如联系 HR 或 IT，而不是编造姓名。"
+  ]
+}

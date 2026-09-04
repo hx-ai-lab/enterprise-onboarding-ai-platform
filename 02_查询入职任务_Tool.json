@@ -1,0 +1,178 @@
+{
+  "id": "tool_onboarding_task_query",
+  "name": "查询入职任务 Tool",
+  "code": "onboarding_task_query",
+  "type": "local_json_query",
+  "enabled": true,
+  "description": "根据城市、岗位、人员类型、入职阶段查询适用的入职任务，包括材料提交、合同签署、设备领取、账号开通、培训、门禁和部门融入事项。",
+  "data_source": {
+    "file": "onboarding_tasks.json",
+    "primary_key": "task_id"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "city": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "北京",
+          "上海",
+          "深圳",
+          "杭州",
+          null
+        ]
+      },
+      "job_category": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "研发",
+          "产品",
+          "运营",
+          "销售",
+          "客服",
+          "职能",
+          null
+        ]
+      },
+      "role_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "正式员工",
+          "实习生",
+          "外包",
+          null
+        ]
+      },
+      "onboarding_stage": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "pre_entry",
+          "day_1",
+          "week_1",
+          "month_1",
+          "probation",
+          null
+        ],
+        "description": "入职阶段：入职前、入职当天、第一周、第一个月、试用期。"
+      },
+      "task_status": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "pending",
+          "completed",
+          "overdue",
+          "blocked",
+          null
+        ]
+      },
+      "keyword": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "任务关键词，例如 电脑、门禁、OA、培训、材料。"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "matched_count": {
+        "type": "integer"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "task_id": {
+              "type": "string"
+            },
+            "task_name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "city": {
+              "type": [
+                "string",
+                "array",
+                "null"
+              ]
+            },
+            "job_category": {
+              "type": [
+                "string",
+                "array",
+                "null"
+              ]
+            },
+            "role_type": {
+              "type": [
+                "string",
+                "array",
+                "null"
+              ]
+            },
+            "onboarding_stage": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "P0",
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "deadline_rule": {
+              "type": "string"
+            },
+            "dependencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "evidence": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "rules": [
+    "优先返回与城市、岗位、人员类型、入职阶段同时匹配的任务。",
+    "没有精确匹配时，可返回通用任务。",
+    "不得生成 onboarding_tasks.json 中不存在的任务。",
+    "不得自行判断员工个人任务是否已完成，除非输入包含员工状态。"
+  ]
+}

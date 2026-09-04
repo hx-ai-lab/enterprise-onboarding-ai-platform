@@ -1,0 +1,125 @@
+{
+  "id": "tool_employee_profile_query",
+  "name": "查询员工信息 Tool",
+  "code": "employee_profile_query",
+  "type": "local_json_query",
+  "enabled": true,
+  "description": "根据员工编号、姓名、手机号后四位或模拟员工身份，查询员工基础信息、部门、岗位、入职日期、直属领导、HR对接人、入职阶段和基础状态。",
+  "data_source": {
+    "file": "employees.json",
+    "primary_key": "employee_id"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "employee_id": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "员工编号，例如 E001。"
+      },
+      "employee_name": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "员工姓名。"
+      },
+      "phone_last4": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "手机号后四位，仅用于模拟匹配员工身份。"
+      },
+      "city": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "北京",
+          "上海",
+          "深圳",
+          "杭州",
+          null
+        ],
+        "description": "员工所在城市。"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "found": {
+        "type": "boolean"
+      },
+      "employee": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "job_category": {
+            "type": "string"
+          },
+          "role_type": {
+            "type": "string",
+            "enum": [
+              "正式员工",
+              "实习生",
+              "外包"
+            ]
+          },
+          "entry_date": {
+            "type": "string"
+          },
+          "onboarding_stage": {
+            "type": "string"
+          },
+          "direct_manager": {
+            "type": "string"
+          },
+          "hr_contact": {
+            "type": "string"
+          },
+          "account_status": {
+            "type": "object"
+          },
+          "device_status": {
+            "type": "object"
+          },
+          "access_status": {
+            "type": "object"
+          }
+        }
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "rules": [
+    "只能返回当前匹配员工的信息。",
+    "不得返回其他无关员工的个人信息。",
+    "如果无法匹配员工，应返回 found=false。",
+    "不得返回身份证号、银行卡号、完整手机号等敏感信息。"
+  ]
+}

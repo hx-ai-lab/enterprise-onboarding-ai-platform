@@ -1,0 +1,136 @@
+{
+  "id": "tool_onboarding_status_calculator",
+  "name": "入职任务状态计算 Tool",
+  "code": "onboarding_status_calculator",
+  "type": "code_calculation",
+  "enabled": true,
+  "description": "基于员工已完成任务、待办任务、任务依赖、截止规则和当前日期，计算入职完成率、待办数量、逾期任务、阻塞任务和下一步优先事项。",
+  "data_source": {
+    "employee_file": "employees.json",
+    "task_file": "onboarding_tasks.json"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "employee_id"
+    ],
+    "properties": {
+      "employee_id": {
+        "type": "string",
+        "description": "员工编号。"
+      },
+      "current_date": {
+        "type": "string",
+        "description": "当前日期，格式 YYYY-MM-DD。"
+      },
+      "include_optional_tasks": {
+        "type": "boolean",
+        "default": false
+      },
+      "scope": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "all",
+          "pre_entry",
+          "day_1",
+          "week_1",
+          "month_1",
+          "probation",
+          null
+        ],
+        "description": "计算范围。"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "employee_id": {
+        "type": "string"
+      },
+      "onboarding_progress": {
+        "type": "number",
+        "description": "入职完成率，0到1之间。"
+      },
+      "completed_task_count": {
+        "type": "integer"
+      },
+      "pending_task_count": {
+        "type": "integer"
+      },
+      "overdue_task_count": {
+        "type": "integer"
+      },
+      "blocked_task_count": {
+        "type": "integer"
+      },
+      "completed_tasks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "pending_tasks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "task_id": {
+              "type": "string"
+            },
+            "task_name": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string"
+            },
+            "deadline_status": {
+              "type": "string",
+              "enum": [
+                "not_due",
+                "due_today",
+                "overdue",
+                "no_deadline"
+              ]
+            },
+            "blocked_by": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "next_priority_tasks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "can_enter_next_stage": {
+        "type": "boolean"
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "calculation_rules": [
+    "完成率 = 已完成必做任务数 / 当前范围内必做任务总数。",
+    "可选任务默认不计入完成率，除非 include_optional_tasks=true。",
+    "存在未完成 P0 任务时，can_enter_next_stage=false。",
+    "存在依赖任务未完成时，当前任务标记为 blocked。",
+    "逾期判断必须基于 current_date 和任务 deadline_rule 计算。",
+    "优先任务排序规则：逾期P0 > 未完成P0 > blocked解除后可做P0 > P1 > P2 > P3。"
+  ],
+  "rules": [
+    "该 Tool 只能做代码计算，不调用大模型。",
+    "不得生成不存在的任务。",
+    "不得修改员工任务状态，只返回计算结果。",
+    "如果员工不存在，应返回错误信息。"
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "tool_onboarding_knowledge_query",
+  "name": "查询入职知识库 Tool",
+  "code": "onboarding_knowledge_query",
+  "type": "local_markdown_rag_query",
+  "enabled": true,
+  "description": "统一查询入职知识库。根据用户问题、城市、岗位、人员类型、系统名称、入职日期和异常现象，检索入职材料、报到流程、系统账号、门禁工位、社保公积金、培训、IT支持等知识卡片。",
+  "data_source": {
+    "files": [
+      "入职知识库_主检索.md",
+      "入职知识库_追问后检索.md"
+    ],
+    "index_type": "markdown_cards",
+    "card_split_rule": "按 ## 卡片 分块"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "query"
+    ],
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "用户问题或结构化后的检索语句。"
+      },
+      "city": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "北京",
+          "上海",
+          "深圳",
+          "杭州",
+          null
+        ]
+      },
+      "job_category": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "研发",
+          "产品",
+          "运营",
+          "销售",
+          "客服",
+          "职能",
+          null
+        ]
+      },
+      "role_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "正式员工",
+          "实习生",
+          "外包",
+          null
+        ]
+      },
+      "system_name": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "邮箱",
+          "OA",
+          "VPN",
+          "飞书",
+          "企业微信",
+          "门禁",
+          "HRIS",
+          null
+        ]
+      },
+      "entry_date": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "入职日期，格式 YYYY-MM-DD。"
+      },
+      "issue_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "异常类型或问题类型，例如 登录异常、账号未开通、权限不足、门禁失败。"
+      },
+      "top_k": {
+        "type": "integer",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 10
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "matched_count": {
+        "type": "integer"
+      },
+      "cards": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "card_id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            },
+            "matched_fields": {
+              "type": "object"
+            },
+            "score": {
+              "type": "number"
+            },
+            "source_file": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "answerable": {
+        "type": "boolean"
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "rules": [
+    "这是唯一的入职知识库检索 Tool，前台不区分主检索和追问后检索。",
+    "城市、岗位、人员类型、系统名称、入职日期等字段只用于提高召回精度。",
+    "优先返回与用户条件更精确匹配的知识卡片。",
+    "如果没有匹配内容，应返回 answerable=false。",
+    "不得由 Tool 自行生成答案，只返回知识卡片和匹配信息。"
+  ]
+}

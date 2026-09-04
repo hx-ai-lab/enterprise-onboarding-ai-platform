@@ -1,0 +1,156 @@
+{
+  "id": "tool_training_plan_query",
+  "name": "查询培训计划 Tool",
+  "code": "training_plan_query",
+  "type": "local_json_query",
+  "enabled": true,
+  "description": "根据员工城市、部门、岗位、人员类型和入职阶段，查询新员工培训、岗位培训、信息安全培训、企业文化培训、系统培训等安排。",
+  "data_source": {
+    "file": "trainings.json",
+    "primary_key": "training_id"
+  },
+  "input_schema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "city": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "北京",
+          "上海",
+          "深圳",
+          "杭州",
+          null
+        ]
+      },
+      "department": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "job_category": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "研发",
+          "产品",
+          "运营",
+          "销售",
+          "客服",
+          "职能",
+          null
+        ]
+      },
+      "role_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "正式员工",
+          "实习生",
+          "外包",
+          null
+        ]
+      },
+      "training_type": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "公司文化培训",
+          "制度流程培训",
+          "业务培训",
+          "系统培训",
+          "信息安全培训",
+          "岗位培训",
+          null
+        ]
+      },
+      "required_only": {
+        "type": "boolean",
+        "default": false
+      },
+      "employee_id": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "matched_count": {
+        "type": "integer"
+      },
+      "trainings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "training_id": {
+              "type": "string"
+            },
+            "training_name": {
+              "type": "string"
+            },
+            "training_type": {
+              "type": "string"
+            },
+            "target_roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "target_cities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": {
+              "type": "boolean"
+            },
+            "recommended_time": {
+              "type": "string"
+            },
+            "delivery_method": {
+              "type": "string"
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "notification_channel": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "assessment_required": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "message": {
+        "type": "string"
+      }
+    }
+  },
+  "rules": [
+    "只返回 trainings.json 中存在的培训计划。",
+    "培训时间如果没有具体日期，只能使用 recommended_time 这类相对说明。",
+    "不得编造培训会议链接、讲师姓名或考核结果。",
+    "如时间冲突，应建议联系 HR 或培训负责人协调。"
+  ]
+}
