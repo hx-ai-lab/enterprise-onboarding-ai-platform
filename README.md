@@ -19,7 +19,7 @@ Enterprise Onboarding AI Assistant Operations & Evaluation Platform.
 ## 技术栈与数据层
 
 - **框架**:Next.js (App Router) + TypeScript,业务 API 使用 Route Handlers(`app/api/**`),未新建独立后端
-- **数据层**:本地 JSON 文件模拟数据库,存放于项目根目录 `/mock-data`;未接入真实数据库、未使用 Prisma
+- **数据层**:只读的模拟基础数据(员工/任务/联系人/制度/培训)使用本地 JSON 文件,存放于项目根目录 `/mock-data`;运行时会被修改的数据(Skill/Tool/Agent 的编辑与启用状态、Agent 执行日志)在配置了 Redis 后持久化到 **Upstash Redis**,未配置时降级为本地 JSON 文件(见下方「持久化存储」一节);未接入关系型数据库、未使用 Prisma
 - **大模型调用**:通过环境变量配置 API Key / Base URL / 模型名称,默认 **Mock 模式**——未配置或调用失败时自动降级为本地规则化模拟输出,保证项目随时可演示,不会报错崩溃
 - **身份模拟**:未接入真实登录;顶部导航栏右上角提供「切换模拟员工身份」下拉选择,用于以不同员工视角测试
 
@@ -49,6 +49,7 @@ npm run dev
 | `LLM_BASE_URL` | OpenAI 兼容的 Chat Completions 接口 Base URL(例如接入非 OpenAI 的兼容服务),请求会 POST 到 `${LLM_BASE_URL}/chat/completions`;仅在需要覆盖默认的 OpenAI 地址时才需要设置 |
 | `LLM_MODEL` | 部署级模型名称,设置后对所有 Skill 生效(优先级高于每个 Skill 自己保存的 `model_params.model`),用于整体切换到非 OpenAI 的模型(如接入 DeepSeek 时设为 `deepseek-v4-flash` 等);不设置时才会使用各 Skill 编辑页里保存的模型 |
 | `PORT` | 本地启动端口(可选) |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Upstash Redis 的 REST 接口地址与 Token,用于持久化 Skill/Tool/Agent 的编辑与启用状态、Agent 执行日志。留空时自动降级为本地 JSON 文件(见下方「持久化存储」一节)。也兼容 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`(独立创建 Upstash 数据库、未通过 Vercel Marketplace 接入时用这组名字) |
 
 `.env.local` 用于存放本地真实配置,已被 `.gitignore` 忽略,请勿提交真实密钥;`.env.example` 仅列出变量名。
 
@@ -58,17 +59,46 @@ npm run dev
 - 真实调用失败(网络错误、超时、非 2xx 状态码、返回内容无法解析为 JSON)时同样会静默降级为 Mock 输出,并在执行明细中用文字提示「已使用 Mock 模式」及具体原因,不会导致请求失败
 - Agent 运行页 / Skill 测试页的每一步都会标注 `mocked` 状态,方便区分本次输出来自真实模型还是 Mock
 
-### 部署到只读文件系统(如 Vercel)时的行为
+### 持久化存储:只读参考数据 vs. 运行时可变数据
 
-Serverless 平台(如 Vercel)在运行时会将部署目录挂载为只读文件系统,直接写入 `mock-data/*.json` 会抛出
-`EROFS`/`EPERM`。`lib/data/json-store.ts` 会在每个实例首次读写时探测 `mock-data` 目录是否可写:
+数据分两类,存储方式不同:
+
+- **只读模拟基础数据**(`employees.json`/`onboarding_tasks.json`/`contacts.json`/`policies.json`/
+  `trainings.json`,由 `lib/data/reference-data.ts` 读取):始终是本地 JSON 文件,不会被应用运行时修改,
+  部署到只读文件系统(如 Vercel)也不受影响。
+- **运行时可变数据**(Skill/Tool/Agent 的编辑内容与启用状态、Agent 执行日志,由 `lib/data/{skills,tools,
+  agents,logs}.ts` 读写,底层是 `lib/data/kv-store.ts`):优先读写 **Upstash Redis**;未配置 Redis 时
+  自动降级为本地 JSON 文件读写(`lib/data/json-store.ts`,与只读参考数据共用同一套读写/写锁逻辑)。
+
+#### 为什么运行时可变数据不能只靠本地 JSON 文件
+
+Serverless 平台(如 Vercel)在运行时把部署目录挂载为只读文件系统,直接写入 `mock-data/*.json` 会抛出
+`EROFS`/`EPERM`;更重要的是,同一个部署的不同请求可能被路由到不同的执行实例,而这些实例**不共享**
+`/tmp` —— 也就是说即使把写入降级到临时目录,一个实例写入的 Skill 编辑结果或 Agent 执行日志,另一个
+实例的读请求也看不到,不需要重新部署或冷启动就会出现"保存了又看不到"、"执行日志为空"这类现象。
+本地 JSON 文件方案对这类数据从架构上就不可靠,因此迁移到了 Redis 这类真正跨实例共享的存储。
+
+#### 配置 Upstash Redis(推荐通过 Vercel Marketplace 接入)
+
+1. 打开 Vercel 项目 → **Storage** 标签页 → **Create Database** → 选择 **Upstash** 提供的 **Redis**
+   (Marketplace 集成名为「Upstash for Redis」),按提示创建一个新的 Redis 数据库并关联到本项目。
+2. 创建完成后 Vercel 会自动向本项目注入环境变量 `KV_REST_API_URL` 与 `KV_REST_API_TOKEN`
+   (这是 Upstash 集成为兼容旧版 Vercel KV 沿用的变量名),无需手动填写。
+3. 触发一次重新部署(修改环境变量后 Vercel 需要重新部署才会对运行中的实例生效)。
+4. 部署完成后,Skill 编辑、启用/禁用状态、Agent 执行日志等写操作会持久化到该 Redis 实例,跨请求/跨实例
+   一致可见;冷启动也不会再丢失。
+
+若已单独创建 Upstash 数据库(未通过 Vercel Marketplace),把它的 `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN` 配置到 Vercel 环境变量即可,代码会自动识别这组变量名。
+
+未配置以上任一组变量时(例如本地开发),自动降级为本地 JSON 文件读写,行为与迁移前一致:
 
 - 可写(本地开发、传统服务器部署等):直接读写项目内的 `mock-data/*.json`,改动会体现在磁盘上
-- 只读(如 Vercel):自动降级为把 `mock-data` 复制一份到系统临时目录(`os.tmpdir()`)并在该副本上读写
+- 只读且未配置 Redis(如未接入 Redis 的 Vercel 部署):降级为把 `mock-data` 复制一份到系统临时目录
+  (`os.tmpdir()`)并在该副本上读写,仍然只在当前实例生命周期内有效,存在上面描述的跨实例不一致问题
 
-这保证了 Skill/Tool/Agent 的编辑、启用禁用、测试、Agent 运行日志等写操作在只读部署环境下也不会 500,
-但请注意:只读环境下的写入只在当前实例的生命周期内有效,实例冷启动后会重置为仓库中的初始数据——这是
-用本地 JSON 文件模拟数据库、且部署到无持久化存储环境下的固有限制;如需真正持久化,请接入真实数据库。
+首次通过 Redis 读取某个集合(Skill/Tool/Agent/日志)时,如果 Redis 中还没有对应的 key,会自动用仓库
+中提交的 `mock-data/*.json` 初始内容作为种子数据写入 Redis,之后所有读写都以 Redis 中的内容为准。
 
 ## 示例提问
 
@@ -110,7 +140,11 @@ app/api/
 
 lib/
 ├── types.ts                     # 领域模型类型定义
-├── data/                        # mock-data 读写(带写入互斥锁)
+├── data/
+│   ├── json-store.ts            # 本地 JSON 文件读写(带写入互斥锁),只读参考数据与本地降级共用
+│   ├── kv-store.ts              # Upstash Redis 读写,未配置时自动降级到 json-store.ts
+│   ├── reference-data.ts        # 只读参考数据(员工/任务/联系人/制度/培训)
+│   └── {skills,tools,agents,logs}.ts  # 运行时可变数据的 CRUD(经 kv-store.ts)
 ├── llm.ts                       # LLM 客户端(OpenAI 兼容),含 Mock 判定
 ├── tools/runners.ts             # 6 个 Tool 的真实执行逻辑
 ├── skills/{mocks,runner}.ts     # 6 个 Skill 的 Mock 规则 + 真实 LLM 调用
