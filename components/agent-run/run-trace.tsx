@@ -204,6 +204,11 @@ export function StepList({ steps }: { steps: ExecutionStep[] }) {
               {step.llm_retry_attempted ? (
                 <span className="sm:col-span-2">已触发截断重试(max_tokens 提升 + 严格 JSON 约束)</span>
               ) : null}
+              {step.raw_response_sample ? (
+                <span className="sm:col-span-2">
+                  原始响应样本(已脱敏,前 500 字符): <code className="whitespace-pre-wrap break-all">{step.raw_response_sample}</code>
+                </span>
+              ) : null}
               {step.validation_error_summary ? (
                 <span className="sm:col-span-2">校验: {step.validation_error_summary}</span>
               ) : null}

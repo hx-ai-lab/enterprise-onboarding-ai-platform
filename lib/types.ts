@@ -212,6 +212,8 @@ export type ExecutionStep = {
   content_length?: number;
   usage?: LLMUsage;
   response_shape?: LLMResponseShape;
+  /** Redacted, length-capped raw HTTP body sample — only set on llm_failure_type "response_json_error". See lib/llm.ts. */
+  raw_response_sample?: string;
   duration_ms: number;
   /** marks steps appended dynamically by the compliance-retry loop */
   retry_of_step?: number;

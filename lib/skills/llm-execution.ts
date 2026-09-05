@@ -92,6 +92,7 @@ function pickMetadata(result: LLMCallResult): LLMCallMetadata {
     content_length: result.content_length,
     usage: result.usage,
     response_shape: result.response_shape,
+    raw_response_sample: result.raw_response_sample,
   };
 }
 

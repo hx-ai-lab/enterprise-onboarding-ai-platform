@@ -184,6 +184,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         content_length: result.content_length,
         usage: result.usage,
         response_shape: result.response_shape,
+        raw_response_sample: result.raw_response_sample,
         duration_ms: Date.now() - t0,
       });
       return { output: result.output, ok: true };
@@ -350,6 +351,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         content_length: result.content_length,
         usage: result.usage,
         response_shape: result.response_shape,
+        raw_response_sample: result.raw_response_sample,
         duration_ms: Date.now() - t0,
         retry_of_step: attempt > 1 ? complianceStep.step : undefined,
       });
@@ -394,6 +396,7 @@ export async function runAgent(params: RunAgentParams): Promise<RunAgentResult> 
         content_length: regenResult.content_length,
         usage: regenResult.usage,
         response_shape: regenResult.response_shape,
+        raw_response_sample: regenResult.raw_response_sample,
         duration_ms: Date.now() - regenT0,
         retry_of_step: replyGenStep.step,
       });
