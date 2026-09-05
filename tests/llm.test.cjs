@@ -82,11 +82,36 @@ test("callLLM classifies and redacts HTTP errors", async () => {
   assert.doesNotMatch(result.reason, /top-secret|another-secret|user@example|13900001001/);
 });
 
-test("callLLM distinguishes response JSON errors", async () => {
+test("callLLM distinguishes response JSON errors and keeps a redacted sample of the raw body", async () => {
   global.fetch = async () => new Response("not-json", { status: 200 });
   const result = await callLLM({ systemPrompt: "system", userPrompt: "user" });
   assert.equal(result.ok, false);
   assert.equal(result.failure_type, "response_json_error");
+  assert.equal(result.raw_response_sample, "not-json");
+});
+
+test("callLLM's raw_response_sample on a non-JSON body is redacted and length-capped", async () => {
+  const secretLaced = `<html>Bearer super-secret-token api_key=another-secret ${"x".repeat(600)}</html>`;
+  global.fetch = async () => new Response(secretLaced, { status: 200 });
+  const result = await callLLM({ systemPrompt: "system", userPrompt: "user" });
+  assert.equal(result.ok, false);
+  assert.equal(result.failure_type, "response_json_error");
+  assert.ok(result.raw_response_sample.length <= 500);
+  assert.doesNotMatch(result.raw_response_sample, /super-secret-token|another-secret/);
+});
+
+test("a raw_response_sample is never present on a successful call or any other failure type", async () => {
+  global.fetch = async () => new Response(
+    JSON.stringify({ choices: [{ finish_reason: "stop", message: { content: "{\"reply\":\"ok\"}" } }] }),
+    { status: 200 },
+  );
+  const ok = await callLLM({ systemPrompt: "system", userPrompt: "user" });
+  assert.equal(ok.raw_response_sample, undefined);
+
+  global.fetch = async () => new Response("server exploded", { status: 500 });
+  const httpError = await callLLM({ systemPrompt: "system", userPrompt: "user" });
+  assert.equal(httpError.failure_type, "http_error");
+  assert.equal(httpError.raw_response_sample, undefined);
 });
 
 test("callLLM surfaces safe diagnostics (model, endpoint_host, usage incl. reasoning_tokens) on success", async () => {

@@ -55,6 +55,8 @@ export type LLMCallMetadata = {
   content_length?: number;
   usage?: LLMUsage;
   response_shape?: LLMResponseShape;
+  /** Redacted, length-capped snippet of the raw HTTP body — only ever set when it couldn't be parsed as JSON at all (see failure_type "response_json_error"), so the shape can be diagnosed instead of discarded. */
+  raw_response_sample?: string;
 };
 
 export type LLMCallResult =
@@ -322,14 +324,21 @@ export async function callLLM(params: LLMCallParams): Promise<LLMCallResult> {
       };
     }
 
+    // Read as text first (not res.json()) so a parse failure still leaves a
+    // sample of the raw body to diagnose — Response bodies are one-shot
+    // streams, so once res.json() throws, the original bytes are gone for
+    // good and every prior "response_json_error" carried zero information
+    // about what the provider actually sent back.
+    const rawBody = await res.text().catch(() => "");
     let json: unknown;
     try {
-      json = await res.json();
+      json = JSON.parse(rawBody);
     } catch {
       return {
         ok: false,
         failure_type: "response_json_error",
         reason: "LLM 响应不是合法 JSON,已使用 Mock 模式",
+        raw_response_sample: redactText(rawBody).slice(0, 500),
         ...metadata,
       };
     }
